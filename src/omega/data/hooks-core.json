@@ -1,0 +1,14 @@
+{
+  "SessionStart": [
+    {"script": "fast_hook.py session_start", "timeout": 5000, "matcher": ""}
+  ],
+  "Stop": [
+    {"script": "fast_hook.py session_stop", "timeout": 5000, "matcher": ""}
+  ],
+  "UserPromptSubmit": [
+    {"script": "fast_hook.py auto_capture", "timeout": 3000, "matcher": ""}
+  ],
+  "PostToolUse": [
+    {"script": "fast_hook.py surface_memories", "timeout": 5000, "matcher": "Edit|Write|NotebookEdit|Bash|Read"}
+  ]
+}
