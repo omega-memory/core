@@ -6,8 +6,6 @@
 [![Tests](https://github.com/omega-memory/core/actions/workflows/test.yml/badge.svg)](https://github.com/omega-memory/core/actions/workflows/test.yml)
 [![PyPI](https://img.shields.io/pypi/v/omega-memory.svg)](https://pypi.org/project/omega-memory/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Star History](https://api.star-history.com/svg?repos=omega-memory/core&type=Date)](https://star-history.com/#omega-memory/core&Date)
-
 Forgetting Intelligence included — memories decay, conflicts auto-resolve, every deletion is audited.
 
 ---
@@ -159,26 +157,9 @@ No more re-debugging the same issue.
 | Intelligent forgetting | Yes | No | No | No |
 | Free & open source | Yes (Apache-2.0) | Freemium | Freemium | Bundled |
 
-## Free vs Pro
+## Open Source
 
-| Capability | Core (Free) | Pro ($19/mo) |
-|------------|:-----------:|:------------:|
-| Memory (25 tools) | Yes | Yes |
-| Semantic Search | Yes | Yes |
-| Auto-Capture Hooks | Yes | Yes |
-| Forgetting Intelligence | Yes | Yes |
-| Graph Relationships | Yes | Yes |
-| Encryption at Rest | Yes | Yes |
-| Plugin System | Yes | Yes |
-| Multi-Agent Coordination (28 tools) | — | Yes |
-| Multi-LLM Routing (10 tools) | — | Yes |
-| Entity Management (8 tools) | — | Yes |
-| Knowledge Base (6 tools) | — | Yes |
-| Secure Profiles (3 tools) | — | Yes |
-| Cloud Sync | — | Yes |
-| Priority Support | — | Yes |
-
-Core is fully open source under Apache-2.0. Pro modules require a license key — [learn more](https://omegamemory.com/pro).
+OMEGA is fully open source under Apache-2.0. All 25 memory tools, semantic search, hooks, forgetting intelligence, graph relationships, encryption, and the plugin system are free.
 
 ## Compatibility
 
@@ -201,7 +182,7 @@ Requires Python 3.11+. macOS and Linux supported. Windows via WSL.
                           │ stdio/MCP
                ┌──────────▼──────────┐
                │   OMEGA MCP Server   │
-               │   26 memory tools    │
+               │   25 memory tools    │
                └──────────┬──────────┘
                           │
                ┌──────────▼──────────┐
@@ -215,7 +196,7 @@ Single database, modular handlers. Additional tools available via the plugin sys
 
 ## MCP Tools Reference
 
-OMEGA runs as an MCP server inside Claude Code. Once installed, 26 memory tools are available. Additional tools can be added via the plugin system.
+OMEGA runs as an MCP server inside Claude Code. Once installed, 25 memory tools are available. Additional tools can be added via the plugin system.
 
 | Tool | What it does |
 |------|-------------|
