@@ -1,0 +1,11 @@
+# Smithery configuration — https://smithery.ai/docs/config#smitheryyaml
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+  commandFunction: |-
+    (config) => ({
+      command: 'python3',
+      args: ['-m', 'omega.server.mcp_server']
+    })

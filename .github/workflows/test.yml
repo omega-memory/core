@@ -1,0 +1,51 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Cache embedding model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/omega/models/bge-small-en-v1.5-onnx
+          key: bge-small-en-v1.5-onnx
+
+      - name: Download embedding model
+        run: |
+          MODEL_DIR=~/.cache/omega/models/bge-small-en-v1.5-onnx
+          if [ ! -f "$MODEL_DIR/model.onnx" ]; then
+            mkdir -p "$MODEL_DIR"
+            HF=https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main
+            curl -sL "$HF/onnx/model.onnx" -o "$MODEL_DIR/model.onnx"
+            curl -sL "$HF/tokenizer.json" -o "$MODEL_DIR/tokenizer.json"
+            curl -sL "$HF/tokenizer_config.json" -o "$MODEL_DIR/tokenizer_config.json"
+            curl -sL "$HF/config.json" -o "$MODEL_DIR/config.json"
+          fi
+
+      - name: Lint
+        run: ruff check src/
+
+      - name: Test
+        run: pytest tests/ -x --tb=short

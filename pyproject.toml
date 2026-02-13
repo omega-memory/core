@@ -1,0 +1,73 @@
+[project]
+name = "omega-memory"
+version = "0.8.0"
+description = "Persistent memory for AI coding agents"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [
+    {name = "Kokyō Keishō Zaidan Stichting", email = "omega-memory@proton.me"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "mcp>=1.0.0",
+    "onnxruntime>=1.18.0",
+    "tokenizers>=0.15.0",
+    "sqlite-vec>=0.1.6",
+    "numpy>=1.24.0",
+    "orjson>=3.9.0",
+    "rich>=13.0.0",
+    "markdownify>=0.14.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/omega-memory/core"
+Repository = "https://github.com/omega-memory/core"
+Changelog = "https://github.com/omega-memory/core/blob/main/CHANGELOG.md"
+Issues = "https://github.com/omega-memory/core/issues"
+
+[project.optional-dependencies]
+encrypt = ["cryptography>=41.0.0", "keyring>=25.0.0"]
+dev = ["pytest", "pytest-asyncio", "pytest-cov", "ruff"]
+docs = ["mkdocs-material>=9.0.0"]
+benchmark = ["openai>=1.0.0", "sentence-transformers>=2.2.0"]
+
+[project.scripts]
+omega = "omega.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/omega"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-m 'not slow'"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+ignore = [
+    "E402",   # module-import-not-at-top (lazy imports by design)
+    "E721",   # type-comparison (pre-existing)
+    "E741",   # ambiguous-variable-name (pre-existing)
+    "F841",   # unused-variable (pre-existing)
+    "F821",   # undefined-name (pre-existing, dynamic imports)
+]

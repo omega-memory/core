@@ -1,0 +1,468 @@
+"""OMEGA MCP Tool Schemas -- 25 tools for memory management."""
+
+TOOL_SCHEMAS = [
+    {
+        "name": "omega_store",
+        "description": "Store a memory with optional type and metadata. Use when the user says 'remember this' or for programmatic capture (decisions, lessons, errors). Defaults to type 'memory' if event_type is omitted.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "content": {"type": "string", "description": "Memory content (also accepts 'text' as alias)"},
+                "text": {"type": "string", "description": "Alias for content — use either content or text"},
+                "event_type": {
+                    "type": "string",
+                    "description": "Type: memory (default), session_summary, task_completion, error_pattern, lesson_learned, decision, user_preference",
+                },
+                "metadata": {"type": "object", "description": "Additional metadata"},
+                "session_id": {"type": "string"},
+                "project": {"type": "string"},
+                "priority": {
+                    "type": "integer",
+                    "description": "Memory priority 1-5 (5=highest). Auto-set from event type if omitted.",
+                    "minimum": 1,
+                    "maximum": 5,
+                },
+                "entity_id": {
+                    "type": "string",
+                    "description": "Scope this memory to an entity (e.g., 'acme'). Omit for unscoped.",
+                },
+                "agent_type": {
+                    "type": "string",
+                    "description": "Agent type for sub-agent memory scoping (e.g., 'code-reviewer', 'test-runner').",
+                },
+            },
+            "required": ["content"],
+        },
+    },
+    {
+        "name": "omega_query",
+        "description": "Search memories — semantic (default) or exact phrase match. Use mode='phrase' for literal substring search (error messages, specific strings).",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Search query (or exact phrase when mode='phrase')"},
+                "mode": {
+                    "type": "string",
+                    "enum": ["semantic", "phrase"],
+                    "description": "Search mode: 'semantic' (default) for meaning-based search, 'phrase' for exact substring match",
+                },
+                "limit": {"type": "integer", "default": 10},
+                "event_type": {"type": "string", "description": "Filter by event type"},
+                "project": {"type": "string"},
+                "session_id": {"type": "string"},
+                "context_file": {
+                    "type": "string",
+                    "description": "Current file being edited (boosts results relevant to this file's context)",
+                },
+                "context_tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Current context tags like language, tools (boosts matching results)",
+                },
+                "filter_tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Hard filter — only return memories containing ALL specified tags (AND logic)",
+                },
+                "temporal_range": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "description": "Optional [start_iso, end_iso] date range filter. Auto-inferred from query text if omitted.",
+                },
+                "entity_id": {
+                    "type": "string",
+                    "description": "Filter results to a specific entity (e.g., 'acme'). Omit for all.",
+                },
+                "agent_type": {
+                    "type": "string",
+                    "description": "Filter results to a specific agent type (e.g., 'code-reviewer'). Omit for all.",
+                },
+                "case_sensitive": {
+                    "type": "boolean",
+                    "description": "Case-sensitive search (only used with mode='phrase', default false)",
+                    "default": False,
+                },
+            },
+            "required": ["query"],
+        },
+    },
+    {
+        "name": "omega_welcome",
+        "description": "Get a session welcome briefing with recent relevant memories and user profile.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "session_id": {"type": "string"},
+                "project": {"type": "string"},
+            },
+        },
+    },
+    {
+        "name": "omega_profile",
+        "description": "Read or update the user profile. Returns the profile by default. If 'update' dict is provided, merges those fields into the profile and saves.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "update": {
+                    "type": "object",
+                    "description": "Profile fields to save (merged with existing). Omit to read profile.",
+                },
+            },
+        },
+    },
+    {
+        "name": "omega_delete_memory",
+        "description": "Delete a specific memory by its ID.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "memory_id": {"type": "string", "description": "The memory ID to delete"},
+            },
+            "required": ["memory_id"],
+        },
+    },
+    {
+        "name": "omega_edit_memory",
+        "description": "Edit the content of a specific memory.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "memory_id": {"type": "string", "description": "The memory ID to edit"},
+                "new_content": {"type": "string", "description": "New content for the memory"},
+            },
+            "required": ["memory_id", "new_content"],
+        },
+    },
+    {
+        "name": "omega_list_preferences",
+        "description": "List all stored user preferences.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "omega_health",
+        "description": "Detailed health check with memory usage, node counts, cache stats, warnings, and recommendations.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "warn_mb": {
+                    "type": "number",
+                    "description": "Memory warning threshold in MB (default 350)",
+                    "default": 350,
+                },
+                "critical_mb": {
+                    "type": "number",
+                    "description": "Memory critical threshold in MB (default 800)",
+                    "default": 800,
+                },
+                "max_nodes": {
+                    "type": "integer",
+                    "description": "Maximum expected nodes (default 10000)",
+                    "default": 10000,
+                },
+            },
+        },
+    },
+    {
+        "name": "omega_backup",
+        "description": "Export or import memories for backup/restore. Default mode is export.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "filepath": {"type": "string", "description": "File path for export or import"},
+                "mode": {
+                    "type": "string",
+                    "description": "Operation mode: 'export' (default) or 'import'",
+                    "default": "export",
+                },
+                "clear_existing": {
+                    "type": "boolean",
+                    "description": "Clear current data before import (default true, only used in import mode)",
+                    "default": True,
+                },
+            },
+            "required": ["filepath"],
+        },
+    },
+    {
+        "name": "omega_lessons",
+        "description": "Retrieve cross-session or cross-project lessons learned, ranked by verification count and access frequency.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "task": {"type": "string", "description": "Optional task description for relevance filtering"},
+                "project_path": {"type": "string", "description": "Optional project scope"},
+                "limit": {"type": "integer", "description": "Max lessons to return (default 5)", "default": 5},
+                "cross_project": {
+                    "type": "boolean",
+                    "description": "If true, search across all projects (default false)",
+                    "default": False,
+                },
+                "exclude_project": {
+                    "type": "string",
+                    "description": "Project path to exclude (only used with cross_project=true)",
+                },
+                "exclude_session": {"type": "string", "description": "Session ID to exclude"},
+                "agent_type": {
+                    "type": "string",
+                    "description": "Filter lessons to a specific agent type (e.g., 'code-reviewer'). Omit for all.",
+                },
+            },
+        },
+    },
+    {
+        "name": "omega_feedback",
+        "description": "Record feedback on a surfaced memory (helpful, unhelpful, outdated). Improves future surfacing quality.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "memory_id": {"type": "string", "description": "The memory node ID to rate"},
+                "rating": {"type": "string", "description": "One of: helpful, unhelpful, outdated"},
+                "reason": {"type": "string", "description": "Optional explanation"},
+            },
+            "required": ["memory_id", "rating"],
+        },
+    },
+    {
+        "name": "omega_clear_session",
+        "description": "Clear all memories for a specific session. Use for cleanup after test sessions.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "session_id": {"type": "string", "description": "The session ID to purge"},
+            },
+            "required": ["session_id"],
+        },
+    },
+    {
+        "name": "omega_similar",
+        "description": "Find memories similar to a given memory. Use for discovering related context.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "memory_id": {"type": "string", "description": "The memory node ID to find similar memories for"},
+                "limit": {"type": "integer", "description": "Max results (default 5)", "default": 5},
+            },
+            "required": ["memory_id"],
+        },
+    },
+    {
+        "name": "omega_timeline",
+        "description": "Show memory timeline grouped by day. Use to see what was captured recently.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "days": {"type": "integer", "description": "Number of days to look back (default 7)", "default": 7},
+                "limit_per_day": {"type": "integer", "description": "Max memories per day (default 10)", "default": 10},
+            },
+        },
+    },
+    {
+        "name": "omega_consolidate",
+        "description": "Run memory consolidation: prune stale low-value memories, cap session summaries, clean orphaned edges. Returns a report.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "prune_days": {
+                    "type": "integer",
+                    "description": "Prune zero-access memories older than N days (default 30)",
+                    "default": 30,
+                },
+                "max_summaries": {
+                    "type": "integer",
+                    "description": "Max session summaries to keep (default 50)",
+                    "default": 50,
+                },
+            },
+        },
+    },
+    {
+        "name": "omega_traverse",
+        "description": "Traverse the memory relationship graph from a starting memory. Shows all connected memories within N hops, useful for understanding context chains and discovering related knowledge clusters.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "memory_id": {"type": "string", "description": "The starting memory node ID"},
+                "max_hops": {
+                    "type": "integer",
+                    "description": "Maximum traversal depth (1-5, default 2)",
+                    "default": 2,
+                },
+                "min_weight": {
+                    "type": "number",
+                    "description": "Minimum edge weight to follow (0.0-1.0, default 0.0)",
+                    "default": 0.0,
+                },
+            },
+            "required": ["memory_id"],
+        },
+    },
+    {
+        "name": "omega_compact",
+        "description": "Compact related memories into consolidated knowledge nodes. Finds clusters of similar memories (same event type, high overlap) and creates summary nodes, marking originals as superseded. Reduces noise while preserving knowledge.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "event_type": {
+                    "type": "string",
+                    "description": "Event type to compact (default: lesson_learned)",
+                    "default": "lesson_learned",
+                },
+                "similarity_threshold": {
+                    "type": "number",
+                    "description": "Minimum Jaccard similarity for clustering (0.0-1.0, default 0.6)",
+                    "default": 0.6,
+                },
+                "min_cluster_size": {
+                    "type": "integer",
+                    "description": "Minimum memories in a cluster to compact (default 3)",
+                    "default": 3,
+                },
+                "dry_run": {
+                    "type": "boolean",
+                    "description": "Preview clusters without compacting (default false)",
+                    "default": False,
+                },
+            },
+        },
+    },
+    {
+        "name": "omega_checkpoint",
+        "description": "Save a task checkpoint — captures current plan, progress, files touched, decisions, and key context. Use when: (1) context window is getting full, (2) completing a major milestone, (3) before starting a new session for an ongoing task. Checkpoints enable seamless session continuity.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "task_title": {
+                    "type": "string",
+                    "description": "Brief title of the current task (e.g., 'Frontend redesign Phase 2')",
+                },
+                "plan": {
+                    "type": "string",
+                    "description": "Current plan or goals — what you're trying to accomplish",
+                },
+                "progress": {
+                    "type": "string",
+                    "description": "What's been completed, what's in progress, what remains",
+                },
+                "files_touched": {
+                    "type": "object",
+                    "description": "Map of file paths to change summaries (e.g., {'src/App.tsx': 'Added routing'})",
+                    "additionalProperties": {"type": "string"},
+                },
+                "decisions": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Key technical decisions made during this task",
+                },
+                "key_context": {
+                    "type": "string",
+                    "description": "Critical context needed to continue — patterns, variable names, API shapes, conventions",
+                },
+                "next_steps": {
+                    "type": "string",
+                    "description": "What should be done next to continue this task",
+                },
+                "session_id": {"type": "string", "description": "Current session ID"},
+                "project": {"type": "string", "description": "Project path"},
+            },
+            "required": ["task_title", "progress"],
+        },
+    },
+    {
+        "name": "omega_resume_task",
+        "description": "Resume a previously checkpointed task. Retrieves the latest checkpoint with full plan, progress, files, decisions, and next steps. Use at the start of a new session to continue where you left off.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "task_title": {
+                    "type": "string",
+                    "description": "Title of the task to resume (semantic search — doesn't need to be exact)",
+                },
+                "project": {
+                    "type": "string",
+                    "description": "Project path to filter checkpoints",
+                },
+                "verbosity": {
+                    "type": "string",
+                    "enum": ["full", "summary", "minimal"],
+                    "description": "How much context to return. 'full' = everything, 'summary' = plan + progress + next steps, 'minimal' = just next steps",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Number of checkpoints to retrieve (default 1 = latest only)",
+                },
+            },
+        },
+    },
+    {
+        "name": "omega_remind",
+        "description": "Set a time-based reminder. OMEGA will surface it when the time arrives (at session start or during active sessions). Use for 'remind me in 1 hour to...' requests.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "text": {"type": "string", "description": "What to be reminded about"},
+                "duration": {
+                    "type": "string",
+                    "description": "When to remind, e.g. '1h', '30m', '2d', '1w', '1d12h', '2 hours'",
+                },
+                "context": {
+                    "type": "string",
+                    "description": "Optional context to include with the reminder (e.g. relevant file paths, decisions)",
+                },
+                "session_id": {"type": "string"},
+                "project": {"type": "string"},
+            },
+            "required": ["text", "duration"],
+        },
+    },
+    {
+        "name": "omega_remind_list",
+        "description": "List active reminders with their status and due times.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "enum": ["pending", "fired", "dismissed", "all"],
+                    "description": "Filter by status (default: shows pending + fired)",
+                },
+            },
+        },
+    },
+    {
+        "name": "omega_remind_dismiss",
+        "description": "Dismiss a reminder by its ID. Use after acknowledging a reminder.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "reminder_id": {"type": "string", "description": "The reminder memory ID to dismiss"},
+            },
+            "required": ["reminder_id"],
+        },
+    },
+    {
+        "name": "omega_type_stats",
+        "description": "Get memory counts grouped by event type. Shows the composition of the memory store (how many decisions, lessons, errors, etc.).",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "omega_session_stats",
+        "description": "Get memory counts grouped by session. Shows which sessions have contributed the most memories (top 20).",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "omega_weekly_digest",
+        "description": "Get a weekly knowledge digest with stats, trends, and highlights. Shows new memories, session count, growth trends, type breakdown, and top topics.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "integer",
+                    "description": "Number of days to include in the digest (default 7)",
+                    "default": 7,
+                },
+            },
+        },
+    },
+]
