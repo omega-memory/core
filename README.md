@@ -74,6 +74,56 @@ Found 1 relevant memory:
 
 That's it. Memories persist across sessions, accumulate over time, and are surfaced automatically when relevant — even if you don't explicitly ask.
 
+## Examples
+
+### Architectural Decisions
+
+> "Remember: we chose PostgreSQL over MongoDB for the orders service because we need ACID transactions for payment processing."
+
+Three weeks later, in a new session:
+
+> "I'm adding a caching layer to the orders service — what should I know?"
+
+OMEGA surfaces the PostgreSQL decision automatically, so Claude doesn't suggest a MongoDB-style approach.
+
+### Learning from Mistakes
+
+You spend 30 minutes debugging a Docker build failure. Claude figures it out:
+
+> *"The node_modules volume mount was shadowing the container's node_modules. Fixed by adding an anonymous volume."*
+
+OMEGA auto-captures this as a lesson. Next time anyone hits the same Docker issue, Claude already knows the fix.
+
+### Code Preferences
+
+> "Remember: always use early returns. Never nest conditionals more than 2 levels deep. Prefer `const` over `let`."
+
+Every future session follows these rules without being told again.
+
+### Task Continuity
+
+You're mid-refactor when you need to stop:
+
+> "Checkpoint this — I'm halfway through migrating the auth middleware to the new pattern."
+
+Next session:
+
+> "Resume the auth middleware task."
+
+Claude picks up exactly where you left off — files changed, decisions made, what's left to do.
+
+### Error Patterns
+
+Claude encounters the same `ECONNRESET` three sessions in a row. Each time OMEGA surfaces the previous fix:
+
+```
+[error_pattern] ECONNRESET on API calls — caused by connection pool exhaustion.
+Fix: set maxSockets to 50 in the http agent config.
+Accessed 3 times
+```
+
+No more re-debugging the same issue.
+
 ## Key Features
 
 - **Persistent Memory** — Stores decisions, lessons, error patterns, and preferences with semantic search. Your agent recalls what matters without you re-explaining everything each session.
@@ -151,7 +201,7 @@ Requires Python 3.11+. macOS and Linux supported. Windows via WSL.
                           │ stdio/MCP
                ┌──────────▼──────────┐
                │   OMEGA MCP Server   │
-               │   25 memory tools    │
+               │   26 memory tools    │
                └──────────┬──────────┘
                           │
                ┌──────────▼──────────┐
@@ -165,7 +215,7 @@ Single database, modular handlers. Additional tools available via the plugin sys
 
 ## MCP Tools Reference
 
-OMEGA runs as an MCP server inside Claude Code. Once installed, 25 memory tools are available. Additional tools can be added via the plugin system.
+OMEGA runs as an MCP server inside Claude Code. Once installed, 26 memory tools are available. Additional tools can be added via the plugin system.
 
 | Tool | What it does |
 |------|-------------|
