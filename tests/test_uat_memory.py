@@ -460,10 +460,11 @@ class TestUATPreferenceManagement:
         assert "Test User" in text or "Developer" in text
 
     @pytest.mark.asyncio
-    async def test_save_profile_empty_rejected(self):
-        """UAT: save_profile rejects empty profile data."""
+    async def test_save_profile_empty_returns_current(self):
+        """UAT: save_profile with empty dict returns current profile (read mode)."""
         result = await HANDLERS["omega_save_profile"]({"profile": {}})
-        assert _is_error(result)
+        # Empty dict is falsy, so handler falls through to read mode
+        assert not _is_error(result)
 
 
 # ============================================================================

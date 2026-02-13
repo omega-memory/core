@@ -277,7 +277,7 @@ class TestInjectSettingsHooks:
                 {"script": "surface_memories.py", "timeout": 5000, "matcher": "Edit|Write"}
             ],
         }
-        (self.data_dir / "hooks.json").write_text(json.dumps(manifest))
+        (self.data_dir / "hooks-core.json").write_text(json.dumps(manifest))
 
         monkeypatch.setattr("omega.cli.SETTINGS_JSON_PATH", self.settings_json)
         monkeypatch.setattr("omega.cli.DATA_DIR", self.data_dir)

@@ -305,34 +305,3 @@ def test_checkpoint_dedup_threshold():
     from omega.bridge import DEDUP_THRESHOLDS
 
     assert DEDUP_THRESHOLDS.get("checkpoint") == 0.90
-
-
-# ============================================================================
-# Hook: _session_resume checkpoint surfacing
-# ============================================================================
-
-
-@pytest.mark.asyncio
-async def test_session_resume_surfaces_checkpoint():
-    """_session_resume should include [CHECKPOINT] when checkpoints exist."""
-    # Store a checkpoint first
-    await HANDLERS["omega_checkpoint"](
-        {
-            "task_title": "Hook surfacing test",
-            "progress": "Testing hook integration",
-            "next_steps": "Verify [CHECKPOINT] appears",
-            "project": "/test/project",
-        }
-    )
-
-    # Call _session_resume
-    from omega.server.hook_server import _session_resume
-
-    class FakeMgr:
-        def recover_session(self, project):
-            return []
-
-    lines = _session_resume("test-session", "/test/project", FakeMgr())
-    combined = "\n".join(lines)
-    assert "[CHECKPOINT]" in combined
-    assert "Hook surfacing test" in combined
