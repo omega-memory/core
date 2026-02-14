@@ -5,6 +5,22 @@ All notable changes to OMEGA will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-02-14
+
+### Fixed
+
+- **SQLite lock contention** — increased `busy_timeout` from 5s to 30s and added retry-with-backoff on all write paths. Fixes "database is locked" errors when multiple Claude Code sessions share the same `omega.db`.
+
+### Added
+
+- **Entity auto-capture** — `resolve_project_entity()` wired into `bridge.auto_capture()` for automatic entity scoping.
+- **Smithery.yaml** — configuration file for Smithery.ai directory listing.
+- **Demo GIF** — animated terminal demo in README showing cross-session memory recall.
+
+### Changed
+
+- README restructured: leads with problem statement, demo GIF, and examples section.
+
 ## [0.6.0] - 2026-02-13
 
 ### Forgetting Intelligence
@@ -48,5 +64,6 @@ OMEGA — persistent memory for AI coding agents. First public release under Apa
 - `omega query/store/remember` — CLI access to memory
 - Plugin architecture via entry points for extensibility
 
+[0.6.1]: https://github.com/omega-memory/core/releases/tag/v0.6.1
 [0.6.0]: https://github.com/omega-memory/core/releases/tag/v0.6.0
 [0.5.0]: https://github.com/omega-memory/core/releases/tag/v0.5.0
