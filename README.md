@@ -8,6 +8,10 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 Forgetting Intelligence included — memories decay, conflicts auto-resolve, every deletion is audited.
 
+<p align="center">
+  <img src="assets/demo.gif" alt="OMEGA demo — cross-session memory recall" width="700">
+</p>
+
 ---
 
 ## Quick Install
