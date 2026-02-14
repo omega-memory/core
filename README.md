@@ -132,8 +132,8 @@ No more re-debugging the same issue.
 | Client | Support Level | Setup |
 |--------|:------------:|-------|
 | Claude Code | Full | `omega setup` (automatic) |
-| Cursor | Full | Manual MCP config in settings |
-| Windsurf | Full | Manual MCP config in settings |
+| Cursor | Full | [Setup Guide](docs/setup-cursor.md) |
+| Windsurf | Full | [Setup Guide](docs/setup-windsurf.md) |
 | Any MCP Client | Full | `claude mcp add omega-memory -- python3 -m omega.server.mcp_server` |
 
 Requires Python 3.11+. macOS and Linux supported. Windows via WSL.
@@ -311,3 +311,4 @@ Manually remove OMEGA entries from `~/.claude/settings.json` and the `<!-- OMEGA
 ## License
 
 Apache-2.0 — see [LICENSE](LICENSE) for details.
+
