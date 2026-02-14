@@ -252,6 +252,17 @@ def _get_embedding_model():
     # Try ONNX Runtime first
     if _check_onnx_runtime():
         onnx_dir = _get_onnx_model_dir()
+        if not onnx_dir:
+            import os
+            from pathlib import Path
+
+            expected_path = Path(os.path.expanduser(_ONNX_DEFAULT_DIR))
+            logger.warning(
+                f"ONNX embedding model not found at {expected_path}\n"
+                f"\n"
+                f"Run 'omega setup' to download the model (~90 MB), or see:\n"
+                f"  https://github.com/omega-memory/core#quick-install"
+            )
         if onnx_dir:
             try:
                 import onnxruntime as ort
@@ -304,12 +315,29 @@ def _get_embedding_model():
             _EMBEDDING_MODEL = None
 
     if _EMBEDDING_MODEL is None:
-        logger.warning(
-            f"No embedding model loaded after attempt {_get_embedding_model._attempt_count}/3. "
-            f"ONNX available: {_check_onnx_runtime()}, "
-            f"ONNX dir: {_get_onnx_model_dir()}, "
-            f"SentenceTransformers available: {_check_sentence_transformers()}"
-        )
+        onnx_dir = _get_onnx_model_dir()
+        has_onnx = _check_onnx_runtime()
+        has_st = _check_sentence_transformers()
+
+        if has_onnx and not onnx_dir:
+            logger.warning(
+                f"No embedding model loaded (attempt {_get_embedding_model._attempt_count}/3). "
+                f"ONNX runtime is installed but the model files are missing. "
+                f"Run 'omega setup' to download the model (~90 MB), or see: "
+                f"https://github.com/omega-memory/core#quick-install"
+            )
+        elif not has_onnx and not has_st:
+            logger.warning(
+                f"No embedding backend available. Install onnxruntime: "
+                f"pip install onnxruntime tokenizers, then run 'omega setup'"
+            )
+        else:
+            logger.warning(
+                f"No embedding model loaded after attempt {_get_embedding_model._attempt_count}/3. "
+                f"ONNX available: {has_onnx}, "
+                f"ONNX dir: {onnx_dir}, "
+                f"SentenceTransformers available: {has_st}"
+            )
 
     return _EMBEDDING_MODEL
 
