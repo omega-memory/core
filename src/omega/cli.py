@@ -534,6 +534,105 @@ def _setup_claude_code(errors_ref: list, hooks_src: Path):
         print(f"  WARNING: Failed to update CLAUDE.md: {e}")
 
 
+def _mcp_server_config() -> dict:
+    """Return the MCP server JSON block for omega-memory."""
+    python_path = _resolve_python_path()
+    return {
+        "command": python_path,
+        "args": ["-m", "omega.server.mcp_server"],
+    }
+
+
+def _write_mcp_config(config_path: Path, key: str, errors_ref: list) -> bool:
+    """Read/create a JSON config file and merge omega-memory into the given key.
+
+    Args:
+        config_path: Path to the config JSON file.
+        key: Top-level key for MCP servers (e.g. "mcpServers" or "context_servers").
+        errors_ref: List to append errors to.
+
+    Returns True on success.
+    """
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+
+    existing = {}
+    if config_path.exists():
+        try:
+            existing = json.loads(config_path.read_text())
+        except (json.JSONDecodeError, OSError) as e:
+            errors_ref.append(e)
+            print(f"  ERROR: Could not parse {config_path}: {e}")
+            return False
+
+    if key not in existing:
+        existing[key] = {}
+
+    existing[key]["omega-memory"] = _mcp_server_config()
+
+    try:
+        config_path.write_text(json.dumps(existing, indent=2) + "\n")
+        print(f"  Wrote MCP config to {config_path}")
+        return True
+    except OSError as e:
+        errors_ref.append(e)
+        print(f"  ERROR: Could not write {config_path}: {e}")
+        return False
+
+
+def _setup_cursor(errors_ref: list):
+    """Cursor setup: write MCP config to ~/.cursor/mcp.json."""
+    print("  Configuring Cursor...")
+    config_path = Path.home() / ".cursor" / "mcp.json"
+    if _write_mcp_config(config_path, "mcpServers", errors_ref):
+        print("  Restart Cursor to activate OMEGA.")
+        print("  NOTE: Hooks (auto-capture, memory surfacing) are only available with Claude Code.")
+
+
+def _setup_windsurf(errors_ref: list):
+    """Windsurf setup: write MCP config to ~/.codeium/windsurf/mcp_config.json."""
+    print("  Configuring Windsurf...")
+    config_path = Path.home() / ".codeium" / "windsurf" / "mcp_config.json"
+    if _write_mcp_config(config_path, "mcpServers", errors_ref):
+        print("  Restart Windsurf to activate OMEGA.")
+        print("  NOTE: Hooks (auto-capture, memory surfacing) are only available with Claude Code.")
+
+
+def _setup_zed(errors_ref: list):
+    """Zed setup: merge into ~/.config/zed/settings.json with Zed's context_servers format."""
+    print("  Configuring Zed...")
+    config_path = Path.home() / ".config" / "zed" / "settings.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+
+    existing = {}
+    if config_path.exists():
+        try:
+            existing = json.loads(config_path.read_text())
+        except (json.JSONDecodeError, OSError) as e:
+            errors_ref.append(e)
+            print(f"  ERROR: Could not parse {config_path}: {e}")
+            return
+
+    if "context_servers" not in existing:
+        existing["context_servers"] = {}
+
+    python_path = _resolve_python_path()
+    existing["context_servers"]["omega-memory"] = {
+        "command": {
+            "path": python_path,
+            "args": ["-m", "omega.server.mcp_server"],
+        }
+    }
+
+    try:
+        config_path.write_text(json.dumps(existing, indent=2) + "\n")
+        print(f"  Wrote config to {config_path}")
+        print("  Restart Zed to activate OMEGA.")
+        print("  NOTE: Hooks (auto-capture, memory surfacing) are only available with Claude Code.")
+    except OSError as e:
+        errors_ref.append(e)
+        print(f"  ERROR: Could not write {config_path}: {e}")
+
+
 def cmd_setup(args):
     """Set up OMEGA: create dirs, download model, initialize DB. Optionally configure a client."""
     # ── Python version check ──────────────────────────────────────────
@@ -553,8 +652,11 @@ def cmd_setup(args):
     elif client is None:
         print("Setting up OMEGA...")
         print("  NOTE: Claude Code CLI not found in PATH.")
-        print("  Skipping MCP registration and hooks. To add them later:")
-        print("    omega setup --client claude-code")
+        print("  Skipping MCP registration. To configure a client later:")
+        print("    omega setup --client claude-code   # full hooks + instructions")
+        print("    omega setup --client cursor        # MCP registration only")
+        print("    omega setup --client windsurf      # MCP registration only")
+        print("    omega setup --client zed           # MCP registration only")
         print()
     else:
         print("Setting up OMEGA...")
@@ -634,10 +736,21 @@ def cmd_setup(args):
             "~/.claude/settings.json (hook entries)",
             "~/.claude/CLAUDE.md (OMEGA instruction block)",
         ])
+    elif client == "cursor":
+        _setup_cursor(errors)
+        steps_done.append("MCP server registration (Cursor)")
+        files_modified.append("~/.cursor/mcp.json")
+    elif client == "windsurf":
+        _setup_windsurf(errors)
+        steps_done.append("MCP server registration (Windsurf)")
+        files_modified.append("~/.codeium/windsurf/mcp_config.json")
+    elif client == "zed":
+        _setup_zed(errors)
+        steps_done.append("MCP server registration (Zed)")
+        files_modified.append("~/.config/zed/settings.json")
     else:
-        steps_skipped.append("MCP server registration (no Claude Code)")
-        steps_skipped.append("Hooks (no Claude Code)")
-        steps_skipped.append("CLAUDE.md instructions (no Claude Code)")
+        steps_skipped.append("MCP server registration (no client specified)")
+        steps_skipped.append("Hooks (no client specified)")
         python_path = _resolve_python_path()
         print("\n  MCP server ready. Add to your client:")
         print(f"    Command: {python_path} -m omega.server.mcp_server")
@@ -1792,7 +1905,9 @@ def main():
         help="Download bge-small-en-v1.5 ONNX model (upgrade from all-MiniLM-L6-v2)",
     )
     setup_parser.add_argument(
-        "--client", choices=["claude-code"], help="Configure a specific client (MCP registration, hooks)"
+        "--client",
+        choices=["claude-code", "cursor", "windsurf", "zed"],
+        help="Configure a specific client (default: auto-detect Claude Code)"
     )
 
     subparsers.add_parser("status", help="Show memory count, store size, model status")

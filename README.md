@@ -26,8 +26,16 @@ OMEGA gives AI coding agents long-term memory and cross-session learning — all
 
 ```bash
 pip install omega-memory
-omega setup
+omega setup                          # auto-detects Claude Code
 omega doctor
+```
+
+**Using Cursor, Windsurf, or Zed?**
+
+```bash
+omega setup --client cursor          # writes ~/.cursor/mcp.json
+omega setup --client windsurf        # writes ~/.codeium/windsurf/mcp_config.json
+omega setup --client zed             # writes ~/.config/zed/settings.json
 ```
 
 ## What Happens Next
@@ -129,12 +137,15 @@ No more re-debugging the same issue.
 
 ## Compatibility
 
-| Client | Support Level | Setup |
-|--------|:------------:|-------|
-| Claude Code | Full | `omega setup` (automatic) |
-| Cursor | Full | Manual MCP config in settings |
-| Windsurf | Full | Manual MCP config in settings |
-| Any MCP Client | Full | `claude mcp add omega-memory -- python3 -m omega.server.mcp_server` |
+| Client | 26 MCP Tools | Auto-Capture Hooks | Setup Command |
+|--------|:------------:|:------------------:|---------------|
+| Claude Code | Yes | Yes | `omega setup` |
+| Cursor | Yes | No | `omega setup --client cursor` |
+| Windsurf | Yes | No | `omega setup --client windsurf` |
+| Zed | Yes | No | `omega setup --client zed` |
+| Any MCP Client | Yes | No | Manual config (see docs) |
+
+All clients get full access to 26 memory tools. Auto-capture hooks (automatic memory surfacing and context capture) require Claude Code.
 
 Requires Python 3.11+. macOS and Linux supported. Windows via WSL.
 

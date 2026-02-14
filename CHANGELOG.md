@@ -5,6 +5,19 @@ All notable changes to OMEGA will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-02-14
+
+### Added
+
+- **Multi-client setup** — `omega setup --client cursor|windsurf|zed` writes MCP config to each editor's config file. Claude Code remains the default with full hooks and instruction injection.
+  - Cursor: `~/.cursor/mcp.json`
+  - Windsurf: `~/.codeium/windsurf/mcp_config.json`
+  - Zed: `~/.config/zed/settings.json`
+
+### Changed
+
+- Setup auto-detect now lists all supported clients when Claude Code is not found.
+
 ## [0.6.1] - 2026-02-14
 
 ### Fixed
@@ -64,6 +77,7 @@ OMEGA — persistent memory for AI coding agents. First public release under Apa
 - `omega query/store/remember` — CLI access to memory
 - Plugin architecture via entry points for extensibility
 
+[0.7.0]: https://github.com/omega-memory/core/releases/tag/v0.7.0
 [0.6.1]: https://github.com/omega-memory/core/releases/tag/v0.6.1
 [0.6.0]: https://github.com/omega-memory/core/releases/tag/v0.6.0
 [0.5.0]: https://github.com/omega-memory/core/releases/tag/v0.5.0

@@ -1,6 +1,6 @@
 """OMEGA — Persistent memory for AI coding agents."""
 
-__version__ = "0.6.1"
+__version__ = "0.7.0"
 
 from omega.sqlite_store import SQLiteStore
 from omega.bridge import (
