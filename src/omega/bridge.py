@@ -1248,12 +1248,12 @@ def welcome(session_id: Optional[str] = None, project: Optional[str] = None) -> 
     profile = get_profile()
     node_count = db.node_count()
 
-    # Check for missing embedding model
+    # Check for missing embedding model files (not backend activation — model is lazy-loaded)
     warnings = []
-    from omega.graphs import get_active_backend
-    if get_active_backend() is None:
+    from omega.graphs import _get_onnx_model_dir, has_onnx_runtime, has_sentence_transformers
+    if has_onnx_runtime() and _get_onnx_model_dir() is None and not has_sentence_transformers():
         warnings.append(
-            "Embedding model not found — semantic search is disabled. "
+            "Embedding model not found — semantic search will be disabled. "
             "Run 'omega setup' to download the model (~90 MB)."
         )
 
