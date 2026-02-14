@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use OMEGA in your research, please cite it as below."
+title: "OMEGA: Persistent Memory for AI Coding Agents"
+type: software
+authors:
+  - family-names: Chen
+    given-names: Jason
+    affiliation: "Kokyō Keishō Zaidan Stichting"
+repository-code: "https://github.com/omega-memory/core"
+url: "https://omegamax.co"
+license: Apache-2.0
+version: "0.6.0"
+date-released: "2026-02-14"
+keywords:
+  - mcp
+  - memory
+  - ai-agents
+  - semantic-search
+  - knowledge-graph
+  - claude-code
+  - persistent-memory
+abstract: >-
+  OMEGA is a local-first memory system for AI coding agents built on the
+  Model Context Protocol (MCP). It provides persistent semantic memory,
+  intelligent forgetting, cross-session learning, and multi-agent coordination.
+  #1 on the LongMemEval benchmark (95.4%, 466/500).

@@ -8,6 +8,25 @@ license = "Apache-2.0"
 authors = [
     {name = "Kokyō Keishō Zaidan Stichting", email = "omega-memory@proton.me"},
 ]
+keywords = [
+    "mcp-server",
+    "claude-code",
+    "cursor",
+    "windsurf",
+    "ai-agents",
+    "memory",
+    "persistent-memory",
+    "semantic-search",
+    "knowledge-graph",
+    "coding-assistant",
+    "openai",
+    "anthropic",
+    "langchain",
+    "vector-search",
+    "embeddings",
+    "developer-tools",
+    "context-persistence",
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -17,6 +36,8 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Database",
 ]
 dependencies = [
     "mcp>=1.0.0",
