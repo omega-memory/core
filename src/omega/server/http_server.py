@@ -72,7 +72,7 @@ def create_http_app(server, api_key: str | None = None) -> Starlette:
             "version": __version__,
             "description": "Persistent memory for AI coding agents",
             "homepage": "https://omegamax.co",
-            "repository": "https://github.com/omega-memory/core",
+            "repository": "https://github.com/omega-memory/omega-memory",
             "transports": [
                 {"type": "streamable-http", "url": "/mcp"},
                 {"type": "stdio", "command": "python3 -m omega.server.mcp_server"},

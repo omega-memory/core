@@ -1,8 +1,8 @@
 # Show HN Draft
 
-**Title:** Show HN: OMEGA – Local-first memory for AI coding agents (95.4% on LongMemEval, #1 on the leaderboard)
+**Title:** Show HN: OMEGA – Local-first persistent memory for AI coding agents (SQLite + ONNX)
 
-**URL:** https://github.com/omega-memory/core
+**URL:** https://github.com/omega-memory/omega-memory
 
 ---
 
@@ -16,11 +16,12 @@ OMEGA is a persistent memory system that runs locally on your machine. It captur
 
 **How it works:**
 
-- SQLite database for storage (~10 MB for ~250 memories)
+- SQLite database for storage (~10 MB for ~600 memories)
 - bge-small-en-v1.5 ONNX embeddings for semantic search (CPU-only, no GPU needed)
-- 26 MCP tools exposed to the agent (store, query, checkpoint, resume, etc.)
+- 27 MCP tools exposed to the agent (store, query, checkpoint, resume, etc.)
 - Hook system in Claude Code auto-captures lessons and decisions without explicit commands
 - Memories are linked via typed edges (related, supersedes, contradicts) forming a knowledge graph
+- All data stays on your machine — no cloud, no telemetry, no external API calls
 
 The search pipeline is: vector similarity → FTS5 keyword matching → type-weighted scoring → contextual re-ranking → time-decay → dedup. Decisions and lessons are weighted 2x because they're more valuable than general notes.
 
@@ -34,16 +35,16 @@ The other differentiator is intelligent forgetting. Most memory systems just acc
 
 I ran OMEGA against LongMemEval (ICLR 2025), an academic benchmark with 500 questions testing long-term memory across 5 capabilities: information extraction, multi-session reasoning, temporal reasoning, knowledge updates, and preference tracking.
 
-OMEGA scored 95.4% (466/500, task-averaged), which puts it #1 on the leaderboard — ahead of Mastra (94.87%). Task-averaged scoring (mean of per-category accuracies) is the standard methodology used by other systems on the leaderboard. Zep/Graphiti published 71.2% in their paper. Most other systems haven't published scores.
+OMEGA scored 466/500 (93.2% raw, 95.4% task-averaged). Task-averaged scoring (mean of per-category accuracies) is the standard methodology used by other systems on the [LongMemEval leaderboard](https://github.com/xiaowu0162/LongMemEval). By that metric, OMEGA is #1 — ahead of Mastra (94.87%). Zep/Graphiti published 71.2% in their paper. Most other systems haven't published scores.
 
 The benchmark code and methodology are open — anyone can reproduce it.
 
 **Honest tradeoffs:**
 
-- Auto-capture hooks only work with Claude Code right now. Other MCP clients get the 26 tools but not the automatic memory capture.
+- Auto-capture hooks only work with Claude Code right now. Other MCP clients get the 27 tools but not the automatic memory capture.
 - Memory footprint is ~31 MB at startup, ~337 MB after the ONNX model loads on first query.
 - The embedding model (bge-small-en-v1.5) is English-only.
-- At ~250 memories the database is ~10 MB. I haven't stress-tested at 10K+ memories yet.
+- At ~600 memories the database is ~10 MB. I haven't stress-tested at 10K+ memories yet.
 - Solo maintainer. This is a passion project, not a VC-backed startup.
 
 **Install:**

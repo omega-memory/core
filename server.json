@@ -1,9 +1,9 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.omega-memory/core",
+  "name": "io.github.omega-memory/omega-memory",
   "description": "Persistent memory for AI coding agents. #1 on LongMemEval. Local-first.",
   "repository": {
-    "url": "https://github.com/omega-memory/core",
+    "url": "https://github.com/omega-memory/omega-memory",
     "source": "github"
   },
   "version": "0.9.3",

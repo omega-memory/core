@@ -1,4 +1,4 @@
-"""Generate social preview image for omega-memory/core GitHub repo."""
+"""Generate social preview image for omega-memory/omega-memory GitHub repo."""
 from PIL import Image, ImageDraw, ImageFont
 
 WIDTH, HEIGHT = 1280, 640
@@ -94,7 +94,7 @@ draw.text((LEFT_X, install_y), "$ ", fill=GREEN, font=FONT_MONO_18)
 draw.text((LEFT_X + 24, install_y), "pip install omega-memory", fill=WHITE, font=FONT_MONO_18)
 
 # GitHub URL
-draw.text((LEFT_X, HEIGHT - 60), "github.com/omega-memory/core", fill=DIM, font=FONT_REG_20)
+draw.text((LEFT_X, HEIGHT - 60), "github.com/omega-memory/omega-memory", fill=DIM, font=FONT_REG_20)
 
 # === RIGHT SIDE (terminal mockup) ===
 TERM_X = 700

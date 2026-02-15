@@ -1,12 +1,12 @@
 # Contributing to OMEGA
 
-Thank you for your interest in contributing to OMEGA!
+Thank you for your interest in contributing to OMEGA! Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
 
 ## Development Setup
 
 ```bash
 # Clone
-git clone https://github.com/omega-memory/core.git
+git clone https://github.com/omega-memory/omega-memory.git
 cd core
 
 # Create a virtual environment
@@ -23,7 +23,7 @@ omega setup
 omega doctor
 ```
 
-Requires Python 3.11+.
+**Prerequisites:** Python 3.11+ and pip.
 
 ## Running Tests
 
@@ -63,6 +63,7 @@ Configuration is in `pyproject.toml` under `[tool.ruff]`. Key settings:
 You can test the MCP server without Claude Code using any MCP client, or by sending JSON-RPC requests directly:
 
 ```bash
+# Make sure your venv is activated first
 # Start the server in stdio mode
 python -m omega.server.mcp_server
 
@@ -79,11 +80,11 @@ src/omega/
   __init__.py          # Package exports
   bridge.py            # High-level API (used by handlers)
   sqlite_store.py      # SQLite backend
-  graphs.py            # Embedding model + semantic search
+  graphs.py            # Embedding model, semantic search, and graph relationships
   cli.py               # CLI commands (omega query, setup, etc.)
   server/
     mcp_server.py      # MCP server entry point
-    tool_schemas.py     # Tool definitions (26 tools)
+    tool_schemas.py     # Tool definitions (25 tools)
     handlers.py         # Tool handler implementations
 ```
 
@@ -107,7 +108,7 @@ We follow conventional commits:
 
 ## What to Contribute
 
-- Bug fixes (check [open issues](https://github.com/omega-memory/core/issues))
+- Bug fixes (check [open issues](https://github.com/omega-memory/omega-memory/issues))
 - Documentation improvements
 - Test coverage for uncovered code paths
 - Performance optimizations
@@ -121,4 +122,4 @@ Sign your commits with `git commit -s` to add the DCO sign-off.
 
 ## Questions?
 
-Open a [GitHub Discussion](https://github.com/omega-memory/core/discussions) or file an [issue](https://github.com/omega-memory/core/issues).
+Open a [GitHub Discussion](https://github.com/omega-memory/omega-memory/discussions) or file an [issue](https://github.com/omega-memory/omega-memory/issues).

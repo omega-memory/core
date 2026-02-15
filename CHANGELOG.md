@@ -117,13 +117,13 @@ OMEGA — persistent memory for AI coding agents. First public release under Apa
 - `omega query/store/remember` — CLI access to memory
 - Plugin architecture via entry points for extensibility
 
-[Unreleased]: https://github.com/omega-memory/core/compare/v0.9.0...HEAD
-[0.9.0]: https://github.com/omega-memory/core/compare/v0.8.0...v0.9.0
-[0.8.0]: https://github.com/omega-memory/core/compare/v0.7.3...v0.8.0
-[0.7.3]: https://github.com/omega-memory/core/compare/v0.7.2...v0.7.3
-[0.7.2]: https://github.com/omega-memory/core/compare/v0.7.1...v0.7.2
-[0.7.1]: https://github.com/omega-memory/core/compare/v0.7.0...v0.7.1
-[0.7.0]: https://github.com/omega-memory/core/compare/v0.6.1...v0.7.0
-[0.6.1]: https://github.com/omega-memory/core/compare/v0.6.0...v0.6.1
-[0.6.0]: https://github.com/omega-memory/core/compare/v0.5.0...v0.6.0
-[0.5.0]: https://github.com/omega-memory/core/releases/tag/v0.5.0
+[Unreleased]: https://github.com/omega-memory/omega-memory/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/omega-memory/omega-memory/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/omega-memory/omega-memory/compare/v0.7.3...v0.8.0
+[0.7.3]: https://github.com/omega-memory/omega-memory/compare/v0.7.2...v0.7.3
+[0.7.2]: https://github.com/omega-memory/omega-memory/compare/v0.7.1...v0.7.2
+[0.7.1]: https://github.com/omega-memory/omega-memory/compare/v0.7.0...v0.7.1
+[0.7.0]: https://github.com/omega-memory/omega-memory/compare/v0.6.1...v0.7.0
+[0.6.1]: https://github.com/omega-memory/omega-memory/compare/v0.6.0...v0.6.1
+[0.6.0]: https://github.com/omega-memory/omega-memory/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/omega-memory/omega-memory/releases/tag/v0.5.0

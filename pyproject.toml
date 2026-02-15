@@ -56,9 +56,9 @@ dependencies = [
 [project.urls]
 Homepage = "https://omegamax.co"
 Documentation = "https://omegamax.co/how-it-works"
-Repository = "https://github.com/omega-memory/core"
-Changelog = "https://github.com/omega-memory/core/blob/main/CHANGELOG.md"
-Issues = "https://github.com/omega-memory/core/issues"
+Repository = "https://github.com/omega-memory/omega-memory"
+Changelog = "https://github.com/omega-memory/omega-memory/blob/main/CHANGELOG.md"
+Issues = "https://github.com/omega-memory/omega-memory/issues"
 
 [project.optional-dependencies]
 encrypt = ["cryptography>=41.0.0", "keyring>=25.0.0"]

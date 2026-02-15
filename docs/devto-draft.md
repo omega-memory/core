@@ -43,7 +43,7 @@ The current architecture is much simpler:
             │ stdio/MCP protocol
 ┌───────────▼─────────────┐
 │   OMEGA MCP Server       │
-│   26 memory tools        │
+│   27 memory tools        │
 │                          │
 │  ┌─────────────────────┐ │
 │  │  Hook Daemon (UDS)  │ │    ← Unix Domain Socket for
@@ -145,7 +145,7 @@ Every deletion is audited. You can run `omega_forgetting_log` and see exactly wh
 
 ## Auto-Capture: The Part That Actually Matters
 
-The 26 MCP tools are nice, but the real value is in the hook system. In Claude Code, OMEGA installs four hooks:
+The 27 MCP tools are nice, but the real value is in the hook system. In Claude Code, OMEGA installs four hooks:
 
 | Hook Event | What It Does |
 |---|---|
@@ -160,7 +160,7 @@ The `UserPromptSubmit` hook is the most interesting. It classifies the conversat
 
 ## Benchmarking Against LongMemEval
 
-[LongMemEval](https://github.com/xiaowu0162/LongMemEval) is an academic benchmark from ICLR 2025 that tests long-term memory systems with 500 questions across 5 capabilities:
+[LongMemEval](https://github.com/xiaowu0162/LongMemEval) is an academic benchmark from ICLR 2025 that tests long-term memory systems with 500 questions across five categories:
 
 - **Information Extraction (IE):** Can you recall specific facts from past conversations?
 - **Multi-Session Reasoning (MS):** Can you synthesize information across multiple sessions?
@@ -201,13 +201,13 @@ I want to be fair here, because these are all legitimate projects solving the sa
 
 - **Claude's built-in memory** (CLAUDE.md files): Works without any setup, but it's a flat markdown file with no semantic search, no auto-capture, and no cross-session learning.
 
-OMEGA's differentiator is being local-first with zero external dependencies while still scoring competitively on benchmarks. Whether that tradeoff matters to you depends on your threat model and workflow.
+OMEGA's differentiator is being local-first with zero external services while still scoring competitively on benchmarks. Whether that tradeoff matters to you depends on your threat model and workflow.
 
 ## Honest Tradeoffs and Limitations
 
 I'd rather you know the sharp edges before you try it:
 
-- **Auto-capture hooks only work with Claude Code.** Other MCP clients (Cursor, Windsurf, Zed) get the 26 tools but not the automatic memory capture. You have to explicitly tell the agent to remember things.
+- **Auto-capture hooks only work with Claude Code.** Other MCP clients (Cursor, Windsurf, Zed) get the 27 tools but not the automatic memory capture. You have to explicitly tell the agent to remember things.
 
 - **Memory footprint.** ~31 MB at startup, ~337 MB after the ONNX model loads on first query. The model unloads after 10 minutes of inactivity, but if you're memory-constrained, this matters.
 
@@ -215,7 +215,7 @@ I'd rather you know the sharp edges before you try it:
 
 - **Solo maintainer.** This is a passion project, not a VC-backed company. I maintain it because I use it every day, but I can't promise the same velocity as a funded team.
 
-- **Not stress-tested at scale.** I've been running it at ~250 memories with no issues. I haven't tested at 10K+ memories. SQLite can handle it, but the search pipeline might need tuning at that scale.
+- **Not stress-tested at scale.** I've been running it at ~600 memories with no issues. I haven't tested at 10K+ memories. SQLite can handle it, but the search pipeline might need tuning at that scale.
 
 - **Python 3.11+ only.** No support for older Python versions. macOS and Linux are supported; Windows works through WSL.
 
@@ -236,7 +236,7 @@ omega setup --client windsurf
 
 Three commands, no API keys, no cloud accounts, no Docker containers. Everything runs locally.
 
-The source is at [github.com/omega-memory/core](https://github.com/omega-memory/core) under Apache-2.0. Stars are appreciated — the project has about 5 right now. Contributions, bug reports, and questions are welcome.
+The source is at [github.com/omega-memory/omega-memory](https://github.com/omega-memory/omega-memory) under Apache-2.0. Stars are appreciated — the project has about 5 right now. Contributions, bug reports, and questions are welcome.
 
 If you want to see the benchmark methodology in detail or how OMEGA compares to alternatives with sources, check [omegamax.co](https://omegamax.co).
 

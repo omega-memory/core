@@ -5,12 +5,12 @@
 [![PyPI version](https://img.shields.io/pypi/v/omega-memory.svg)](https://pypi.org/project/omega-memory/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/omega-memory/core?style=social)](https://github.com/omega-memory/core)
-[![Tests](https://github.com/omega-memory/core/actions/workflows/test.yml/badge.svg)](https://github.com/omega-memory/core/actions/workflows/test.yml)
+[![GitHub stars](https://img.shields.io/github/stars/omega-memory/omega-memory?style=social)](https://github.com/omega-memory/omega-memory)
+[![Tests](https://github.com/omega-memory/omega-memory/actions/workflows/test.yml/badge.svg)](https://github.com/omega-memory/omega-memory/actions/workflows/test.yml)
 [![LongMemEval](https://img.shields.io/badge/LongMemEval-95.4%25%20(%231%20overall)-brightgreen.svg)](https://omegamax.co/benchmarks)
 [![smithery badge](https://smithery.ai/badge/omegamemory/omega-memory)](https://smithery.ai/server/omegamemory/omega-memory)
 
-mcp-name: io.github.omega-memory/core
+mcp-name: io.github.omega-memory/omega-memory
 
 ## The Problem
 
@@ -21,7 +21,7 @@ AI coding agents are stateless. Every new session starts from zero.
 
 OMEGA gives AI coding agents long-term memory and cross-session learning, all running locally on your machine.
 
-![OMEGA demo — cross-session memory recall](https://raw.githubusercontent.com/omega-memory/core/main/assets/demo.gif)
+![OMEGA demo — cross-session memory recall](https://raw.githubusercontent.com/omega-memory/omega-memory/main/assets/demo.gif)
 
 ---
 
@@ -314,7 +314,7 @@ All hooks dispatch via `fast_hook.py` → daemon UDS socket, with fail-open sema
 ### Install from Source
 
 ```bash
-git clone https://github.com/omega-memory/core.git
+git clone https://github.com/omega-memory/omega-memory.git
 cd core
 pip install -e ".[dev]"
 omega setup
@@ -366,14 +366,14 @@ Manually remove OMEGA entries from `~/.claude/settings.json` and the `<!-- OMEGA
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=omega-memory/core&type=Date)](https://star-history.com/#omega-memory/core&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=omega-memory/omega-memory&type=Date)](https://star-history.com/#omega-memory/omega-memory&Date)
 
 ## Contributing
 
 - [Contributing Guide](CONTRIBUTING.md)
 - [Security Policy](SECURITY.md)
 - [Changelog](CHANGELOG.md)
-- [Report a Bug](https://github.com/omega-memory/core/issues)
+- [Report a Bug](https://github.com/omega-memory/omega-memory/issues)
 
 ## License
 

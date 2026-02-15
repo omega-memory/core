@@ -6,7 +6,7 @@ authors:
   - family-names: Chen
     given-names: Jason
     affiliation: "Kokyō Keishō Zaidan Stichting"
-repository-code: "https://github.com/omega-memory/core"
+repository-code: "https://github.com/omega-memory/omega-memory"
 url: "https://omegamax.co"
 license: Apache-2.0
 version: "0.6.0"
