@@ -60,9 +60,17 @@ SECTIONS: Dict[str, Dict[str, str]] = {
         "content": """\
 | Risk | Actions | Gate |
 |------|---------|------|
-| **HIGH** | Deploy, force-push, delete branch, rm -rf | Full gate (all 3 steps below) |
+| **EXTERNAL** | Deploy, MCP submit, email, tweet, API call | Action claim (below) |
+| **HIGH** | Force-push, delete branch, rm -rf | Full gate (all 3 steps below) |
 | **MEDIUM** | git commit/push, create branch, install deps | `omega_coord_status` only |
 | **LOW** | Edit claimed files, run tests, read | No gate — hooks handle it |
+
+### EXTERNAL action gate (atomic — prevents duplicate execution):
+1. `omega_action_check(action_type="...", action_target="...")` — already done?
+2. `omega_action_claim(session_id="...", action_type="...", action_target="...")` — atomic claim
+3. If claim fails: STOP — another agent owns it
+4. Perform the external action
+5. `omega_action_complete(action_id=..., session_id="...", result="...")` — record outcome
 
 ### HIGH-risk gate (all 3 required):
 1. `omega_query(event_type="decision", query="<target area>")` — check prior decisions
