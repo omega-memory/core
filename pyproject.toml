@@ -41,7 +41,6 @@ classifiers = [
     "Topic :: Database",
     "Typing :: Typed",
     "Environment :: Console",
-    "Framework :: MCP",
 ]
 dependencies = [
     "mcp>=1.0.0",
