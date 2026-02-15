@@ -1,17 +1,17 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.omega-memory/core",
-  "description": "Persistent memory for AI coding agents. #1 on LongMemEval. 26 MCP tools. Local-first.",
+  "description": "Persistent memory for AI coding agents. #1 on LongMemEval. Local-first.",
   "repository": {
     "url": "https://github.com/omega-memory/core",
     "source": "github"
   },
-  "version": "0.9.2",
+  "version": "0.9.3",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "omega-memory",
-      "version": "0.9.2",
+      "version": "0.9.3",
       "transport": {
         "type": "stdio"
       },
