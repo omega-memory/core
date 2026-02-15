@@ -51,7 +51,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/omega-memory/core"
+Homepage = "https://omegamax.co"
+Documentation = "https://omegamax.co/how-it-works"
 Repository = "https://github.com/omega-memory/core"
 Changelog = "https://github.com/omega-memory/core/blob/main/CHANGELOG.md"
 Issues = "https://github.com/omega-memory/core/issues"
