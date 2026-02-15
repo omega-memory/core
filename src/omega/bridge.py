@@ -1061,6 +1061,14 @@ def query(
         else:
             output += "*No matching memories found.*\n"
 
+        # Warn if embedding model is degraded (hash fallback active)
+        try:
+            from omega.graphs import is_embedding_degraded
+            if is_embedding_degraded() and results:
+                output += "\n**Note:** Semantic search is degraded (embedding model unavailable). Results are text-match only.\n"
+        except Exception:
+            pass
+
         logger.info(f"Query '{query_text[:30]}...' returned {len(results)} results")
         return output
 

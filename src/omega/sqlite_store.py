@@ -461,11 +461,11 @@ class SQLiteStore:
         if row and row[0] < 2:
             try:
                 c.execute("ALTER TABLE memories ADD COLUMN priority INTEGER DEFAULT 3")
-            except Exception:
+            except sqlite3.OperationalError:
                 pass  # Column already exists
             try:
                 c.execute("ALTER TABLE memories ADD COLUMN referenced_date TEXT")
-            except Exception:
+            except sqlite3.OperationalError:
                 pass  # Column already exists
             c.execute("CREATE INDEX IF NOT EXISTS idx_memories_priority ON memories(priority)")
             c.execute("CREATE INDEX IF NOT EXISTS idx_memories_referenced_date ON memories(referenced_date)")
@@ -478,7 +478,7 @@ class SQLiteStore:
         if current_version and current_version[0] < 3:
             try:
                 c.execute("ALTER TABLE memories ADD COLUMN entity_id TEXT")
-            except Exception:
+            except sqlite3.OperationalError:
                 pass  # Column already exists
             c.execute("CREATE INDEX IF NOT EXISTS idx_memories_entity_id ON memories(entity_id)")
             c.execute("UPDATE schema_version SET version = 3")
@@ -490,7 +490,7 @@ class SQLiteStore:
         if current_version and current_version[0] < 4:
             try:
                 c.execute("ALTER TABLE memories ADD COLUMN agent_type TEXT")
-            except Exception:
+            except sqlite3.OperationalError:
                 pass  # Column already exists
             c.execute("CREATE INDEX IF NOT EXISTS idx_memories_agent_type ON memories(agent_type)")
             c.execute("UPDATE schema_version SET version = 4")
@@ -502,7 +502,7 @@ class SQLiteStore:
         if current_version and current_version[0] < 5:
             try:
                 c.execute("ALTER TABLE memories ADD COLUMN canonical_hash TEXT")
-            except Exception:
+            except sqlite3.OperationalError:
                 pass  # Column already exists
             c.execute("CREATE INDEX IF NOT EXISTS idx_memories_canonical_hash ON memories(canonical_hash)")
             c.execute("UPDATE schema_version SET version = 5")
@@ -2218,7 +2218,7 @@ class SQLiteStore:
         filepath.parent.mkdir(parents=True, exist_ok=True)
         # Write with restricted permissions (0o600) — export contains plaintext memories
         export_bytes = json.dumps(export_data, indent=2).encode("utf-8")
-        fd = os.open(str(filepath), os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
+        fd = os.open(str(filepath), os.O_CREAT | os.O_WRONLY | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
         try:
             os.write(fd, export_bytes)
         finally:
@@ -2234,6 +2234,8 @@ class SQLiteStore:
 
     def import_from_file(self, filepath: Path, clear_existing: bool = True) -> Dict[str, Any]:
         """Import memories from a JSON file."""
+        if Path(filepath).is_symlink():
+            raise ValueError("Import file must not be a symlink")
         data = json.loads(Path(filepath).read_text())
         nodes = data.get("nodes", [])
 

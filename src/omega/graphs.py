@@ -383,9 +383,17 @@ def _onnx_encode(tokenizer, session, texts: List[str]) -> "np.ndarray":
     return embeddings / np.clip(norms, a_min=1e-9, a_max=None)
 
 
+_embedding_degraded = False
+
+
+def is_embedding_degraded() -> bool:
+    """Return True if the last embedding call fell back to hash embedding."""
+    return _embedding_degraded
+
+
 def generate_embedding(text: str, dimension: int = 384) -> List[float]:
     """Generate semantic embedding from text. Returns 384-dim normalized vector."""
-    global _LAST_EMBED_TIME
+    global _LAST_EMBED_TIME, _embedding_degraded
     # Check for idle-timeout unloading opportunity
     _maybe_unload_model()
 
@@ -411,12 +419,14 @@ def generate_embedding(text: str, dimension: int = 384) -> List[float]:
                 while len(_EMBEDDING_CACHE) > _EMBEDDING_CACHE_MAX:
                     _EMBEDDING_CACHE.popitem(last=False)
                 _LAST_EMBED_TIME = _time_module.monotonic()
+                _embedding_degraded = False
                 return result
             else:
                 logger.warning("Embedding model is None — circuit-breaker tripped. Using hash fallback.")
         except Exception as e:
             logger.warning(f"Embedding generation failed, falling back to hash: {e}")
 
+    _embedding_degraded = True
     return _hash_embedding(text, dimension)
 
 
