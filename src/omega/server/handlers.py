@@ -982,6 +982,42 @@ async def handle_omega_remind_dismiss(arguments: dict) -> dict:
 
 
 # ============================================================================
+# Handler: omega_protocol
+# ============================================================================
+
+
+async def handle_omega_protocol(arguments: dict) -> dict:
+    """Serve the coordination playbook dynamically based on context."""
+    section = arguments.get("section")
+    project = arguments.get("project")
+
+    # Detect peer count for auto-mode selection
+    peer_count = 0
+    try:
+        from omega.coordination import get_manager
+
+        mgr = get_manager()
+        sessions = mgr.list_sessions(auto_clean=True)
+        peer_count = max(0, len(sessions) - 1)
+    except Exception:
+        pass  # Solo mode if coordination unavailable
+
+    try:
+        from omega.protocol import get_protocol
+
+        result = get_protocol(
+            section=section,
+            project=project,
+            include_lessons=True,
+            peer_count=peer_count,
+        )
+        return mcp_response(result)
+    except Exception as e:
+        logger.error("omega_protocol failed: %s", e, exc_info=True)
+        return mcp_error(f"Protocol failed: {e}")
+
+
+# ============================================================================
 # Handler Registry
 # ============================================================================
 
@@ -1018,4 +1054,5 @@ HANDLERS: Dict[str, Any] = {
     "omega_remind": handle_omega_remind,
     "omega_remind_list": handle_omega_remind_list,
     "omega_remind_dismiss": handle_omega_remind_dismiss,
+    "omega_protocol": handle_omega_protocol,
 }

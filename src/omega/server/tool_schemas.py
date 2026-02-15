@@ -1,4 +1,4 @@
-"""OMEGA MCP Tool Schemas -- 25 tools for memory management."""
+"""OMEGA MCP Tool Schemas -- 26 tools for memory management."""
 
 TOOL_SCHEMAS = [
     {
@@ -461,6 +461,23 @@ TOOL_SCHEMAS = [
                     "type": "integer",
                     "description": "Number of days to include in the digest (default 7)",
                     "default": 7,
+                },
+            },
+        },
+    },
+    {
+        "name": "omega_protocol",
+        "description": "Get your coordination playbook — dynamically assembled operating instructions. Call at session start (step 2 after omega_welcome) or when you need protocol guidance. Returns context-sensitive rules based on project, peer activity, and learned lessons.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "section": {
+                    "type": "string",
+                    "description": "Specific section or group: 'memory', 'coordination', 'coordination_gate', 'teamwork', 'context', 'reminders', 'diagnostics', 'entity', 'heuristics', 'git', 'what_next'. Groups: 'solo', 'multi_agent', 'full', 'minimal'. Omit for auto-detect based on peer activity.",
+                },
+                "project": {
+                    "type": "string",
+                    "description": "Current project path for context-sensitive protocol rules.",
                 },
             },
         },
