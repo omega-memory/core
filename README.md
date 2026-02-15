@@ -19,7 +19,7 @@ AI coding agents are stateless. Every new session starts from zero.
 - **Context loss.** Agents forget every decision, preference, and architectural choice between sessions. Developers spend 10-30 minutes per session re-explaining context that was already established.
 - **Repeated mistakes.** Without learning from past sessions, agents make the same errors over and over. They don't remember what worked, what failed, or why a particular approach was chosen.
 
-OMEGA gives AI coding agents long-term memory and cross-session learning — all running locally on your machine.
+OMEGA gives AI coding agents long-term memory and cross-session learning, all running locally on your machine.
 
 ![OMEGA demo — cross-session memory recall](https://raw.githubusercontent.com/omega-memory/core/main/assets/demo.gif)
 
@@ -33,7 +33,9 @@ omega setup                 # auto-configures Claude Code + hooks
 omega doctor                # verify everything works
 ```
 
-That's it. Start a new Claude Code session and say **"Remember that we always use early returns and never nest more than 2 levels."** Close the session. Open a new one and ask **"What are my code style preferences?"** -- OMEGA recalls it instantly.
+That's it. Start a new Claude Code session and say **"Remember that we always use early returns and never nest more than 2 levels."** Close the session. Open a new one and ask **"What are my code style preferences?"** OMEGA recalls it instantly.
+
+**Full architecture walkthrough and setup guide:** [omegamax.co/quickstart](https://omegamax.co/quickstart)
 
 **Using Cursor, Windsurf, or Zed?**
 
@@ -163,7 +165,7 @@ Details and methodology at [omegamax.co/benchmarks](https://omegamax.co/benchmar
 
 ## Compatibility
 
-| Client | 25 MCP Tools | Auto-Capture Hooks | Setup Command |
+| Client | 12 MCP Tools | Auto-Capture Hooks | Setup Command |
 |--------|:------------:|:------------------:|---------------|
 | Claude Code | Yes | Yes | `omega setup` |
 | Cursor | Yes | No | `omega setup --client cursor` |
@@ -171,7 +173,7 @@ Details and methodology at [omegamax.co/benchmarks](https://omegamax.co/benchmar
 | Zed | Yes | No | `omega setup --client zed` |
 | Any MCP Client | Yes | No | Manual config (see docs) |
 
-All clients get full access to all memory tools. Auto-capture hooks (automatic memory surfacing and context capture) require Claude Code.
+All clients get full access to all 12 core memory tools. Auto-capture hooks (automatic memory surfacing and context capture) require Claude Code.
 
 Requires Python 3.11+. macOS and Linux supported. Windows via WSL.
 
@@ -210,7 +212,7 @@ That's it. Every SSH session — from your laptop, phone, or tablet — now has 
                           │ stdio/MCP
                ┌──────────▼──────────┐
                │   OMEGA MCP Server   │
-               │   25 memory tools    │
+               │   12 memory tools    │
                └──────────┬──────────┘
                           │
                ┌──────────▼──────────┐
@@ -224,7 +226,7 @@ Single database, modular handlers. Additional tools available via the plugin sys
 
 ### MCP Tools Reference
 
-25 memory tools are available as an MCP server. Additional tools can be added via plugins.
+12 core memory tools are available as an MCP server. Full tool reference at [omegamax.co/docs](https://omegamax.co/docs).
 
 | Tool | What it does |
 |------|-------------|
@@ -243,7 +245,7 @@ Single database, modular handlers. Additional tools available via the plugin sys
 | `omega_remind` | Set time-based reminders |
 | `omega_feedback` | Rate surfaced memories (helpful, unhelpful, outdated) |
 
-Plus 11 more tools for health checks, backup/restore, stats, editing, and deletion. See `tool_schemas.py` for the full list.
+Additional utility tools for health checks, backup/restore, stats, editing, and deletion are also available. See [omegamax.co/docs](https://omegamax.co/docs) for the full reference.
 
 ### CLI
 
