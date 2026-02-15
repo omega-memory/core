@@ -9,6 +9,8 @@
 [![LongMemEval](https://img.shields.io/badge/LongMemEval-95.4%25%20(%231%20overall)-brightgreen.svg)](https://omegamax.co/benchmarks)
 [![Star History](https://img.shields.io/github/stars/omega-memory/core?style=social)](https://github.com/omega-memory/core)
 
+<!-- mcp-name: io.github.omega-memory/core -->
+
 ## The Problem
 
 AI coding agents are stateless. Every new session starts from zero.
