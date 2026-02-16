@@ -1164,7 +1164,7 @@ def welcome(session_id: Optional[str] = None, project: Optional[str] = None) -> 
     db = _get_store()
 
     # Get recent high-value memories (decisions, lessons, preferences, errors)
-    _HIGH_VALUE_TYPES = {"decision", "lesson_learned", "user_preference", "error_pattern"}
+    _HIGH_VALUE_TYPES = {"decision", "lesson_learned", "user_preference", "user_fact", "error_pattern"}
     recent = []
     try:
         candidates = db.get_recent(limit=100)
@@ -1179,6 +1179,27 @@ def welcome(session_id: Optional[str] = None, project: Optional[str] = None) -> 
             recent = candidates[:5]
     except Exception as e:
         logger.debug("Welcome recent memory filtering failed: %s", e)
+
+    # Ensure user_preference and user_fact are always represented
+    # These types have 95-98% never-accessed rates because recency-based
+    # selection misses older entries. Direct type queries fix this.
+    try:
+        _entity_id = None
+        if project:
+            try:
+                from omega.entity.engine import resolve_project_entity
+                _entity_id = resolve_project_entity(project)
+            except Exception:
+                pass
+        recent_ids = {n.id for n in recent}
+        for _type in ("user_preference", "user_fact"):
+            type_nodes = db.get_by_type(_type, limit=5, entity_id=_entity_id)
+            for node in type_nodes:
+                if node.id not in recent_ids and not (node.metadata or {}).get("superseded"):
+                    recent.append(node)
+                    recent_ids.add(node.id)
+    except Exception as e:
+        logger.debug("Welcome type-based enrichment failed: %s", e)
 
     # Sort by priority (desc) then recency
     recent.sort(
@@ -1195,6 +1216,7 @@ def welcome(session_id: Optional[str] = None, project: Optional[str] = None) -> 
         grouped: Dict[str, List[str]] = {}
         type_labels = {
             "user_preference": "User Preferences",
+            "user_fact": "User Context",
             "decision": "Active Decisions",
             "lesson_learned": "Key Lessons",
             "error_pattern": "Known Pitfalls",
@@ -1213,7 +1235,7 @@ def welcome(session_id: Optional[str] = None, project: Optional[str] = None) -> 
 
         if grouped:
             sections = []
-            for label in ["User Preferences", "Active Decisions", "Key Lessons", "Known Pitfalls"]:
+            for label in ["User Preferences", "User Context", "Active Decisions", "Key Lessons", "Known Pitfalls"]:
                 items = grouped.get(label, [])
                 if items:
                     section = f"### {label}\n"
