@@ -39,6 +39,7 @@ Thumbs.db
 # Environment
 .env
 .env.local
+.mcpregistry*
 
 # Project-local agent instructions (contains internal references)
 CLAUDE.md
