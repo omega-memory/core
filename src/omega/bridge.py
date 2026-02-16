@@ -1192,12 +1192,24 @@ def welcome(session_id: Optional[str] = None, project: Optional[str] = None) -> 
             except Exception:
                 pass
         recent_ids = {n.id for n in recent}
+        now_iso = datetime.now(timezone.utc).isoformat()
         for _type in ("user_preference", "user_fact"):
             type_nodes = db.get_by_type(_type, limit=5, entity_id=_entity_id)
             for node in type_nodes:
-                if node.id not in recent_ids and not (node.metadata or {}).get("superseded"):
+                if (node.metadata or {}).get("superseded"):
+                    continue
+                if node.id not in recent_ids:
                     recent.append(node)
                     recent_ids.add(node.id)
+                # Bump access_count for all surfaced nodes (whether new or already in recent)
+                try:
+                    db._conn.execute(
+                        "UPDATE memories SET access_count = access_count + 1, last_accessed = ? WHERE node_id = ?",
+                        (now_iso, node.id),
+                    )
+                except Exception:
+                    pass
+        db._commit()
     except Exception as e:
         logger.debug("Welcome type-based enrichment failed: %s", e)
 

@@ -1131,7 +1131,7 @@ class SQLiteStore:
 
         # Phase 2: Text-based fallback/supplement
         text_mult = 4 if temporal_range else 3
-        text_results = self._text_search(query_text, limit=limit * text_mult)
+        text_results = self._text_search(query_text, limit=limit * text_mult, entity_id=entity_id)
         for result in text_results:
             if result.id not in all_results:
                 event_type = result.metadata.get("event_type", "")
@@ -1463,7 +1463,7 @@ class SQLiteStore:
             logger.debug(f"Vec query failed: {e}")
             return []
 
-    def _text_search(self, query_text: str, limit: int = 20) -> List[MemoryResult]:
+    def _text_search(self, query_text: str, limit: int = 20, entity_id: Optional[str] = None) -> List[MemoryResult]:
         """Text-based search using FTS5 (fast) or LIKE fallback."""
         query_lower = query_text.lower()
         words = [w for w in query_lower.split() if len(w) > 2]
