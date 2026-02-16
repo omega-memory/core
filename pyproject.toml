@@ -43,7 +43,6 @@ classifiers = [
     "Environment :: Console",
 ]
 dependencies = [
-    "mcp>=1.0.0",
     "onnxruntime>=1.18.0",
     "tokenizers>=0.15.0",
     "sqlite-vec>=0.1.6",
@@ -61,6 +60,7 @@ Changelog = "https://github.com/omega-memory/omega-memory/blob/main/CHANGELOG.md
 Issues = "https://github.com/omega-memory/omega-memory/issues"
 
 [project.optional-dependencies]
+server = ["mcp>=1.0.0"]
 encrypt = ["cryptography>=41.0.0", "keyring>=25.0.0"]
 dev = ["pytest", "pytest-asyncio", "pytest-cov", "ruff"]
 docs = ["mkdocs-material>=9.0.0"]

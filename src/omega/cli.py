@@ -503,35 +503,45 @@ def cmd_timeline(args):
 # ---------------------------------------------------------------------------
 
 
-def _setup_claude_code(errors_ref: list, hooks_src: Path):
-    """Claude Code-specific setup: MCP registration, hooks, CLAUDE.md."""
-    # Register MCP server with Claude Code
-    print("  Registering MCP server with Claude Code...")
-    python_path = _resolve_python_path()
-    try:
-        result = subprocess.run(
-            ["claude", "mcp", "add", "omega-memory", "--", python_path, "-m", "omega.server.mcp_server"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-        if result.returncode == 0:
-            print("  MCP server registered successfully")
-        else:
+def _setup_claude_code(errors_ref: list, hooks_src: Path, hooks_only: bool = False):
+    """Claude Code-specific setup: MCP registration, hooks, CLAUDE.md.
+
+    If hooks_only=True, skips MCP server registration entirely. Hooks call
+    bridge.py directly (no MCP process needed), saving ~600MB RAM per session.
+    """
+    if not hooks_only:
+        # Register MCP server with Claude Code
+        print("  Registering MCP server with Claude Code...")
+        python_path = _resolve_python_path()
+        try:
+            result = subprocess.run(
+                ["claude", "mcp", "add", "omega-memory", "--", python_path, "-m", "omega.server.mcp_server"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if result.returncode == 0:
+                print("  MCP server registered successfully")
+            else:
+                errors_ref.append(1)
+                print(f"  ERROR: MCP registration returned code {result.returncode}")
+                if result.stderr:
+                    print(f"  {result.stderr.strip()}")
+                print(f"  Register manually: claude mcp add omega-memory -- {python_path} -m omega.server.mcp_server")
+        except FileNotFoundError:
             errors_ref.append(1)
-            print(f"  ERROR: MCP registration returned code {result.returncode}")
-            if result.stderr:
-                print(f"  {result.stderr.strip()}")
+            print("  ERROR: 'claude' command not found in PATH.")
+            print("  Install Claude Code: https://docs.anthropic.com/en/docs/claude-code")
+            print(f"  Or register manually: claude mcp add omega-memory -- {python_path} -m omega.server.mcp_server")
+        except Exception as e:
+            errors_ref.append(1)
+            print(f"  ERROR: MCP registration failed: {e}")
             print(f"  Register manually: claude mcp add omega-memory -- {python_path} -m omega.server.mcp_server")
-    except FileNotFoundError:
-        errors_ref.append(1)
-        print("  ERROR: 'claude' command not found in PATH.")
-        print("  Install Claude Code: https://docs.anthropic.com/en/docs/claude-code")
-        print(f"  Or register manually: claude mcp add omega-memory -- {python_path} -m omega.server.mcp_server")
-    except Exception as e:
-        errors_ref.append(1)
-        print(f"  ERROR: MCP registration failed: {e}")
-        print(f"  Register manually: claude mcp add omega-memory -- {python_path} -m omega.server.mcp_server")
+    else:
+        print("  Skipping MCP server registration (--hooks-only mode)")
+        print("  Hooks will call bridge.py directly (~600MB RAM saved per session)")
+        print("  Note: omega_store, omega_query etc. won't be available as Claude tools")
+        print("  To add MCP later: omega setup --client claude-code")
 
     # Install hooks
     hooks_dst = Path.home() / ".claude" / "scripts"
@@ -670,9 +680,14 @@ def cmd_setup(args):
         sys.exit(1)
 
     client = getattr(args, "client", None)
+    hooks_only = getattr(args, "hooks_only", False)
     errors = []
     download_model = getattr(args, "download_model", False)
     skip_model = getattr(args, "skip_model", False)
+
+    # --hooks-only implies claude-code client
+    if hooks_only and client is None:
+        client = "claude-code"
 
     # ── Auto-detect Claude Code if --client not specified ─────────────
     if client is None and shutil.which("claude"):
@@ -767,15 +782,17 @@ def cmd_setup(args):
     # 5. Client-specific setup
     hooks_src = Path(__file__).parent.parent.parent / "hooks"
     if client == "claude-code":
-        _setup_claude_code(errors, hooks_src)
-        steps_done.append("MCP server registration")
+        _setup_claude_code(errors, hooks_src, hooks_only=hooks_only)
+        if hooks_only:
+            steps_done.append("MCP server registration (skipped -- hooks-only)")
+        else:
+            steps_done.append("MCP server registration")
         steps_done.append("Hooks (settings.json)")
         steps_done.append("CLAUDE.md instructions")
-        files_modified.extend([
-            "~/.claude.json (MCP server entry)",
-            "~/.claude/settings.json (hook entries)",
-            "~/.claude/CLAUDE.md (OMEGA instruction block)",
-        ])
+        files_modified.append("~/.claude/settings.json (hook entries)")
+        files_modified.append("~/.claude/CLAUDE.md (OMEGA instruction block)")
+        if not hooks_only:
+            files_modified.append("~/.claude.json (MCP server entry)")
     elif client == "cursor":
         _setup_cursor(errors)
         steps_done.append("MCP server registration (Cursor)")
@@ -1484,7 +1501,7 @@ def cmd_validate(args):
 
 
 def cmd_serve(args):
-    """Run the OMEGA MCP server (stdio or HTTP mode)."""
+    """Run the OMEGA MCP server (stdio or HTTP mode). Requires: pip install omega-memory[server]"""
     import asyncio
 
     if getattr(args, "http", False):
@@ -1497,7 +1514,11 @@ def cmd_serve(args):
         print(f"MCP endpoint: http://{args.host}:{args.port}/mcp")
         asyncio.run(run_http(args.host, args.port, api_key))
     else:
-        from omega.server.mcp_server import main
+        try:
+            from omega.server.mcp_server import main
+        except SystemExit:
+            # mcp_server.py prints its own error message and calls sys.exit(1)
+            return
 
         asyncio.run(main())
 
@@ -2120,6 +2141,11 @@ def main():
         "--client",
         choices=["claude-code", "cursor", "windsurf", "zed"],
         help="Configure a specific client (default: auto-detect Claude Code)"
+    )
+    setup_parser.add_argument(
+        "--hooks-only",
+        action="store_true",
+        help="Configure hooks and CLAUDE.md WITHOUT MCP server (saves ~600MB RAM per session)",
     )
 
     status_parser = subparsers.add_parser("status", help="Show memory count, store size, model status")

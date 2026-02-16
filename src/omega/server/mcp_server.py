@@ -1,4 +1,7 @@
-"""OMEGA MCP Server -- Standalone stdio-based MCP server for Claude Code."""
+"""OMEGA MCP Server -- Standalone stdio-based MCP server for Claude Code.
+
+Requires the 'server' extra: pip install omega-memory[server]
+"""
 
 import atexit
 import asyncio
@@ -8,9 +11,18 @@ import os
 import sys
 import time
 
-from mcp.server import Server
-from mcp.server.stdio import stdio_server
-from mcp.types import Tool, TextContent
+try:
+    from mcp.server import Server
+    from mcp.server.stdio import stdio_server
+    from mcp.types import Tool, TextContent
+except ImportError:
+    print(
+        "Error: MCP server requires the 'mcp' package.\n"
+        "Install with: pip install omega-memory[server]\n"
+        "Or directly: pip install mcp>=1.0.0",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 from omega.server.tool_schemas import TOOL_SCHEMAS as _CORE_SCHEMAS
 from omega.server.handlers import HANDLERS as _CORE_HANDLERS
