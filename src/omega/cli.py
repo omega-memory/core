@@ -189,39 +189,52 @@ def _inject_settings_hooks(hooks_src: Path):
         print("  settings.json: hooks configured")
 
 
-def _download_file(url: str, target: Path) -> None:
-    """Download a file with a progress bar showing bytes and percentage."""
+def _download_file(url: str, target: Path, retries: int = 3) -> None:
+    """Download a file with a progress bar showing bytes and percentage.
+
+    Retries up to `retries` times with exponential backoff on failure.
+    """
     import urllib.request
 
-    req = urllib.request.Request(url, headers={"User-Agent": "omega-memory/1.0"})
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        total = int(resp.headers.get("Content-Length", 0))
-        downloaded = 0
-        chunk_size = 64 * 1024  # 64 KB chunks
-
-        # Write to a temp file, rename on success (no partial files left behind)
-        tmp = target.with_suffix(target.suffix + ".tmp")
+    for attempt in range(1, retries + 1):
         try:
-            with open(tmp, "wb") as f:
-                while True:
-                    chunk = resp.read(chunk_size)
-                    if not chunk:
-                        break
-                    f.write(chunk)
-                    downloaded += len(chunk)
-                    if total > 0:
-                        pct = downloaded * 100 // total
-                        mb_done = downloaded / (1024 * 1024)
-                        mb_total = total / (1024 * 1024)
-                        print(f"\r    {target.name}: {mb_done:.1f}/{mb_total:.1f} MB ({pct}%)", end="", flush=True)
-                    else:
-                        mb_done = downloaded / (1024 * 1024)
-                        print(f"\r    {target.name}: {mb_done:.1f} MB", end="", flush=True)
-            tmp.rename(target)
-            print()  # newline after progress
-        except BaseException:
-            tmp.unlink(missing_ok=True)
-            raise
+            req = urllib.request.Request(url, headers={"User-Agent": "omega-memory/1.0"})
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                total = int(resp.headers.get("Content-Length", 0))
+                downloaded = 0
+                chunk_size = 64 * 1024  # 64 KB chunks
+
+                # Write to a temp file, rename on success (no partial files left behind)
+                tmp = target.with_suffix(target.suffix + ".tmp")
+                try:
+                    with open(tmp, "wb") as f:
+                        while True:
+                            chunk = resp.read(chunk_size)
+                            if not chunk:
+                                break
+                            f.write(chunk)
+                            downloaded += len(chunk)
+                            if total > 0:
+                                pct = downloaded * 100 // total
+                                mb_done = downloaded / (1024 * 1024)
+                                mb_total = total / (1024 * 1024)
+                                print(f"\r    {target.name}: {mb_done:.1f}/{mb_total:.1f} MB ({pct}%)", end="", flush=True)
+                            else:
+                                mb_done = downloaded / (1024 * 1024)
+                                print(f"\r    {target.name}: {mb_done:.1f} MB", end="", flush=True)
+                    tmp.rename(target)
+                    print()  # newline after progress
+                    return  # success
+                except BaseException:
+                    tmp.unlink(missing_ok=True)
+                    raise
+        except Exception as e:
+            if attempt < retries:
+                wait = 2 ** (attempt - 1)  # 1s, 2s
+                print(f"\n    Retry {attempt}/{retries} for {target.name} (waiting {wait}s): {e}")
+                time.sleep(wait)
+            else:
+                raise
 
 
 def _download_bge_model(target_dir: Path, errors_ref: list) -> bool:
@@ -233,15 +246,15 @@ def _download_bge_model(target_dir: Path, errors_ref: list) -> bool:
         return True
 
     print("  Downloading bge-small-en-v1.5 ONNX model (~130MB)...")
+    hf_repo = "https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main"
+    # model.onnx lives in onnx/ subdir, tokenizer files at repo root
+    files = {
+        "model.onnx": f"{hf_repo}/onnx/model.onnx",
+        "tokenizer.json": f"{hf_repo}/tokenizer.json",
+        "config.json": f"{hf_repo}/config.json",
+        "tokenizer_config.json": f"{hf_repo}/tokenizer_config.json",
+    }
     try:
-        hf_repo = "https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main"
-        # model.onnx lives in onnx/ subdir, tokenizer files at repo root
-        files = {
-            "model.onnx": f"{hf_repo}/onnx/model.onnx",
-            "tokenizer.json": f"{hf_repo}/tokenizer.json",
-            "config.json": f"{hf_repo}/config.json",
-            "tokenizer_config.json": f"{hf_repo}/tokenizer_config.json",
-        }
         for fname, url in files.items():
             target = target_dir / fname
             if not target.exists():
@@ -249,7 +262,10 @@ def _download_bge_model(target_dir: Path, errors_ref: list) -> bool:
     except Exception as e:
         errors_ref.append(e)
         print(f"  ERROR: bge model download failed: {e}")
-        print(f"  Manually place model files in {target_dir}")
+        print("\n  To download manually, run:")
+        for fname, url in files.items():
+            if not (target_dir / fname).exists():
+                print(f"    curl -L -o {target_dir / fname} {url}")
         return False
 
     if not (target_dir / "model.onnx").exists():
@@ -656,6 +672,7 @@ def cmd_setup(args):
     client = getattr(args, "client", None)
     errors = []
     download_model = getattr(args, "download_model", False)
+    skip_model = getattr(args, "skip_model", False)
 
     # ── Auto-detect Claude Code if --client not specified ─────────────
     if client is None and shutil.which("claude"):
@@ -685,7 +702,11 @@ def cmd_setup(args):
     steps_done.append("Storage directory")
 
     # 2. Download ONNX model
-    if download_model:
+    if skip_model:
+        print("  Skipping model download (--skip-model). Semantic search will be unavailable.")
+        print("  Text-based search (FTS5) will still work.")
+        steps_skipped.append("Embedding model (--skip-model)")
+    elif download_model:
         _download_bge_model(BGE_MODEL_DIR, errors)
         steps_done.append("Embedding model (bge-small-en-v1.5)")
     else:
@@ -702,28 +723,27 @@ def cmd_setup(args):
             MINILM_MODEL_DIR.mkdir(parents=True, exist_ok=True)
             model_path = MINILM_MODEL_DIR / "model.onnx"
             print("  Downloading ONNX embedding model (all-MiniLM-L6-v2, ~90MB)...")
-            script = Path(__file__).parent.parent.parent / "scripts" / "download_model.py"
-            if script.exists():
-                subprocess.run([sys.executable, str(script), str(MINILM_MODEL_DIR)], check=True)
-            else:
-                try:
-                    hf_repo = "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main"
-                    # model.onnx lives under onnx/, tokenizer/config files are at repo root
-                    files = {
-                        "model.onnx": f"{hf_repo}/onnx/model.onnx",
-                        "tokenizer.json": f"{hf_repo}/tokenizer.json",
-                        "config.json": f"{hf_repo}/config.json",
-                        "tokenizer_config.json": f"{hf_repo}/tokenizer_config.json",
-                        "vocab.txt": f"{hf_repo}/vocab.txt",
-                    }
-                    for fname, url in files.items():
-                        target = MINILM_MODEL_DIR / fname
-                        if not target.exists():
-                            _download_file(url, target)
-                except Exception as e:
-                    errors.append(e)
-                    print(f"  ERROR: Model download failed: {e}")
-                    print(f"  Manually place model files in {MINILM_MODEL_DIR}")
+            hf_repo = "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main"
+            # model.onnx lives under onnx/, tokenizer/config files are at repo root
+            minilm_files = {
+                "model.onnx": f"{hf_repo}/onnx/model.onnx",
+                "tokenizer.json": f"{hf_repo}/tokenizer.json",
+                "config.json": f"{hf_repo}/config.json",
+                "tokenizer_config.json": f"{hf_repo}/tokenizer_config.json",
+                "vocab.txt": f"{hf_repo}/vocab.txt",
+            }
+            try:
+                for fname, url in minilm_files.items():
+                    target = MINILM_MODEL_DIR / fname
+                    if not target.exists():
+                        _download_file(url, target)
+            except Exception as e:
+                errors.append(e)
+                print(f"  ERROR: Model download failed: {e}")
+                print("\n  To download manually, run:")
+                for fname, url in minilm_files.items():
+                    if not (MINILM_MODEL_DIR / fname).exists():
+                        print(f"    curl -L -o {MINILM_MODEL_DIR / fname} {url}")
             if not model_path.exists():
                 errors.append("model.onnx not present")
                 print("  ERROR: model.onnx still not present after download attempt")
@@ -1488,6 +1508,8 @@ def cmd_doctor(args):
 
     errors = 0
     warnings = 0
+    fix_mode = getattr(args, "fix", False)
+    fixes_needed = []  # list of (description, fix_command) tuples
 
     def ok(msg):
         print_status_line("ok", msg)
@@ -1551,6 +1573,8 @@ def cmd_doctor(args):
         active_model_dir = MINILM_MODEL_DIR
     else:
         fail(f"model.onnx not found at {BGE_MODEL_DIR} or {MINILM_MODEL_DIR}")
+        print("    Fix: Run 'omega setup' to download the embedding model")
+        fixes_needed.append(("Download embedding model", "omega setup"))
         active_model_dir = BGE_MODEL_DIR
 
     tokenizer_path = active_model_dir / "tokenizer.json"
@@ -1558,6 +1582,7 @@ def cmd_doctor(args):
         ok("tokenizer.json present")
     else:
         fail(f"tokenizer.json not found at {active_model_dir}")
+        fixes_needed.append(("Download tokenizer", "omega setup"))
 
     try:
         from omega.graphs import generate_embedding, get_embedding_info
@@ -1614,7 +1639,8 @@ def cmd_doctor(args):
                 ok("omega-memory registered in Claude Code")
             else:
                 fail("omega-memory NOT registered in Claude Code")
-                print("    Run: claude mcp add omega-memory -- python3 -m omega.server.mcp_server")
+                print("    Fix: Run 'omega setup --client claude-code' to register")
+                fixes_needed.append(("Register MCP server", "omega setup --client claude-code"))
         except FileNotFoundError:
             warn("Claude Code CLI not found (cannot verify MCP registration)")
         except Exception as e:
@@ -1796,10 +1822,12 @@ def cmd_doctor(args):
                         ok(f"{event} hook configured")
                     else:
                         warn(f"{event} hook not configured")
+                        fixes_needed.append((f"Configure {event} hook", "omega setup --client claude-code"))
             except Exception as e:
                 warn(f"Cannot read settings.json: {e}")
         else:
             warn("settings.json not found (hooks not configured)")
+            fixes_needed.append(("Configure hooks", "omega setup --client claude-code"))
 
     # 6. Python path
     print_section("Environment")
@@ -1811,6 +1839,48 @@ def cmd_doctor(args):
 
     ok(f"OMEGA home: {OMEGA_DIR}")
     ok(f"Platform: {sys.platform}")
+
+    # First-run detection: if model missing + hooks missing + empty DB, show banner
+    bge_missing = not (BGE_MODEL_DIR / "model.onnx").exists()
+    minilm_missing = not (MINILM_MODEL_DIR / "model.onnx").exists()
+    model_missing = bge_missing and minilm_missing
+    no_db = not (OMEGA_DIR / "omega.db").exists()
+    if model_missing and no_db and errors > 0:
+        print()
+        print("  ┌─────────────────────────────────────────────────────┐")
+        print("  │  It looks like 'omega setup' hasn't been run yet.   │")
+        print("  │  Run it now to complete installation:               │")
+        print("  │                                                     │")
+        print("  │    omega setup                                      │")
+        print("  │                                                     │")
+        print("  └─────────────────────────────────────────────────────┘")
+
+    # Deduplicate fix suggestions
+    seen_fixes = set()
+    unique_fixes = []
+    for desc, cmd in fixes_needed:
+        if cmd not in seen_fixes:
+            seen_fixes.add(cmd)
+            unique_fixes.append((desc, cmd))
+
+    if fix_mode and unique_fixes:
+        print()
+        print("Running auto-fix...")
+        for desc, cmd in unique_fixes:
+            print(f"  Fixing: {desc}")
+            try:
+                result = subprocess.run(cmd.split(), capture_output=True, text=True, timeout=120)
+                if result.returncode == 0:
+                    print(f"    [OK] {desc}")
+                else:
+                    print(f"    [FAIL] {desc}: {result.stderr.strip()[:200]}")
+            except Exception as e:
+                print(f"    [FAIL] {desc}: {e}")
+        print()
+        print("Re-run 'omega doctor' to verify fixes.")
+    elif unique_fixes and not fix_mode:
+        print()
+        print(f"  {len(unique_fixes)} issue(s) can be auto-fixed. Run: omega doctor --fix")
 
     # Summary
     print()
@@ -2042,6 +2112,11 @@ def main():
         help="Download bge-small-en-v1.5 ONNX model (upgrade from all-MiniLM-L6-v2)",
     )
     setup_parser.add_argument(
+        "--skip-model",
+        action="store_true",
+        help="Skip embedding model download (text-only search, no semantic search)",
+    )
+    setup_parser.add_argument(
         "--client",
         choices=["claude-code", "cursor", "windsurf", "zed"],
         help="Configure a specific client (default: auto-detect Claude Code)"
@@ -2052,6 +2127,7 @@ def main():
 
     doctor_parser = subparsers.add_parser("doctor", help="Verify installation: import, model, database")
     doctor_parser.add_argument("--client", choices=["claude-code"], help="Include client-specific checks (MCP, hooks)")
+    doctor_parser.add_argument("--fix", action="store_true", help="Automatically fix issues by running missing setup steps")
 
     migrate_db_parser = subparsers.add_parser("migrate-db", help="Migrate JSON graphs to SQLite backend")
     migrate_db_parser.add_argument("--force", action="store_true", help="Overwrite existing SQLite database")

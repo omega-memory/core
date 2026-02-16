@@ -28,14 +28,27 @@ OMEGA gives AI coding agents long-term memory and cross-session learning, all ru
 ## Quick Start
 
 ```bash
-pip install omega-memory    # install from PyPI
+pip3 install omega-memory   # install from PyPI
 omega setup                 # auto-configures Claude Code + hooks
 omega doctor                # verify everything works
 ```
 
+> **Important:** `omega setup` downloads the embedding model and configures your editor. Don't skip it.
+
 That's it. Start a new Claude Code session and say **"Remember that we always use early returns and never nest more than 2 levels."** Close the session. Open a new one and ask **"What are my code style preferences?"** OMEGA recalls it instantly.
 
 **Full architecture walkthrough and setup guide:** [omegamax.co/quickstart](https://omegamax.co/quickstart)
+
+<details>
+<summary><strong>Alternative install methods</strong></summary>
+
+```bash
+pipx install omega-memory              # recommended for global install (no venv needed)
+pip3 install omega-memory              # standard (may need a venv)
+python3 -m pip install omega-memory    # if pip3 is not available
+```
+
+</details>
 
 **Using Cursor, Windsurf, or Zed?**
 
@@ -142,7 +155,7 @@ No more re-debugging the same issue.
 | Cross-session learning | Yes | Limited | Yes | No |
 | Intelligent forgetting | Yes | No (grows forever) | No | No |
 | Local-only (no cloud/API keys) | Yes | Yes | No (API key required) | Yes |
-| Setup complexity | `pip install` + `omega setup` | Zero (built-in) | API key + cloud config | Manual JSON config |
+| Setup complexity | `pip3 install` + `omega setup` | Zero (built-in) | API key + cloud config | Manual JSON config |
 
 **MEMORY.md** is Claude Code's built-in markdown file -- great for simple notes, but no search, no auto-capture, and it grows unbounded. **Mem0** offers strong semantic memory but requires cloud API keys and has no checkpoint/resume or contradiction detection. **Basic MCP memory servers** (e.g., simple key-value stores) provide persistence but lack the intelligence layer -- no semantic search, no forgetting, no graph.
 
@@ -183,7 +196,7 @@ Claude Code's SSH support lets you run your agent on a remote server from any de
 
 ```bash
 # On your remote server (any Linux VPS — no GPU needed)
-pip install omega-memory
+pip3 install omega-memory
 omega setup
 omega doctor
 ```
@@ -315,8 +328,8 @@ All hooks dispatch via `fast_hook.py` → daemon UDS socket, with fail-open sema
 
 ```bash
 git clone https://github.com/omega-memory/omega-memory.git
-cd core
-pip install -e ".[dev]"
+cd omega-memory
+pip3 install -e ".[dev]"
 omega setup
 ```
 
@@ -334,7 +347,7 @@ All changes are idempotent — running `omega setup` again won't duplicate entri
 ## Troubleshooting
 
 **`omega doctor` shows FAIL on import:**
-- Ensure `pip install -e .` from the repo root
+- Ensure `pip3 install -e .` from the repo root
 - Check `python3 -c "import omega"` works
 
 **MCP server not registered:**
@@ -349,7 +362,7 @@ claude mcp add omega-memory -- python3 -m omega.server.mcp_server
 ## Development
 
 ```bash
-pip install -e ".[dev]"
+pip3 install -e ".[dev]"
 pytest tests/
 ruff check src/              # Lint
 ```
@@ -359,7 +372,7 @@ ruff check src/              # Lint
 ```bash
 claude mcp remove omega-memory
 rm -rf ~/.omega ~/.cache/omega
-pip uninstall omega-memory
+pip3 uninstall omega-memory
 ```
 
 Manually remove OMEGA entries from `~/.claude/settings.json` and the `<!-- OMEGA:BEGIN -->` block from `~/.claude/CLAUDE.md`.
