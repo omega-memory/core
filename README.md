@@ -28,9 +28,9 @@ OMEGA gives AI coding agents long-term memory and cross-session learning, all ru
 ## Quick Start
 
 ```bash
-pip3 install omega-memory   # install from PyPI
-omega setup                 # auto-configures Claude Code + hooks
-omega doctor                # verify everything works
+pip3 install omega-memory[server]   # install from PyPI (includes MCP server)
+omega setup                         # auto-configures Claude Code + hooks
+omega doctor                        # verify everything works
 ```
 
 > **Important:** `omega setup` downloads the embedding model and configures your editor. Don't skip it.
@@ -43,14 +43,38 @@ That's it. Start a new Claude Code session and say **"Remember that we always us
 <summary><strong>Alternative install methods</strong></summary>
 
 ```bash
-pipx install omega-memory              # recommended for global install (no venv needed)
-pip3 install omega-memory              # standard (may need a venv)
-python3 -m pip install omega-memory    # if pip3 is not available
+pipx install omega-memory[server]              # recommended for global install (no venv needed)
+pip3 install omega-memory[server]              # standard (may need a venv)
+python3 -m pip install omega-memory[server]    # if pip3 is not available
 ```
 
 </details>
 
-**Using Cursor, Windsurf, or Zed?**
+<details>
+<summary><strong>Library-only install (no MCP server)</strong></summary>
+
+If you only need OMEGA as a Python library for scripts, CI/CD, or automation, you can skip the MCP server entirely:
+
+```bash
+pip3 install omega-memory    # core only, no MCP server process
+```
+
+```python
+from omega import store, query, remember
+
+store("Always use TypeScript strict mode", "user_preference")
+results = query("TypeScript preferences")
+```
+
+This gives you the full storage and retrieval API without running an MCP server (~50 MB lighter, no background process). You won't get MCP tools in your editor, but hooks still work:
+
+```bash
+omega setup --hooks-only    # auto-capture + memory surfacing, no MCP server (~600MB RAM saved)
+```
+
+</details>
+
+**Using Cursor, Windsurf, or Zed?** Install with `pip3 install omega-memory[server]`, then:
 
 ```bash
 omega setup --client cursor          # writes ~/.cursor/mcp.json
@@ -196,7 +220,7 @@ Claude Code's SSH support lets you run your agent on a remote server from any de
 
 ```bash
 # On your remote server (any Linux VPS — no GPU needed)
-pip3 install omega-memory
+pip3 install omega-memory[server]
 omega setup
 omega doctor
 ```
@@ -264,7 +288,7 @@ Additional utility tools for health checks, backup/restore, stats, editing, and 
 
 | Command | Description |
 |---------|-------------|
-| `omega setup` | Create dirs, download model, register MCP, install hooks |
+| `omega setup` | Create dirs, download model, register MCP, install hooks (`--hooks-only` to skip MCP) |
 | `omega doctor` | Verify installation health |
 | `omega status` | Memory count, store size, model status |
 | `omega query <text>` | Search memories by semantic similarity |
@@ -329,7 +353,7 @@ All hooks dispatch via `fast_hook.py` → daemon UDS socket, with fail-open sema
 ```bash
 git clone https://github.com/omega-memory/omega-memory.git
 cd omega-memory
-pip3 install -e ".[dev]"
+pip3 install -e ".[server,dev]"
 omega setup
 ```
 
@@ -347,8 +371,11 @@ All changes are idempotent — running `omega setup` again won't duplicate entri
 ## Troubleshooting
 
 **`omega doctor` shows FAIL on import:**
-- Ensure `pip3 install -e .` from the repo root
+- Ensure `pip3 install -e ".[server]"` from the repo root
 - Check `python3 -c "import omega"` works
+
+**MCP server fails to start:**
+- Run `pip3 install omega-memory[server]` (the `[server]` extra includes the MCP package)
 
 **MCP server not registered:**
 ```bash
@@ -362,7 +389,7 @@ claude mcp add omega-memory -- python3 -m omega.server.mcp_server
 ## Development
 
 ```bash
-pip3 install -e ".[dev]"
+pip3 install -e ".[server,dev]"
 pytest tests/
 ruff check src/              # Lint
 ```
