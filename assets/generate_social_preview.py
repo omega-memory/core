@@ -59,7 +59,7 @@ draw.text((LEFT_X + 16, badge_y + 8), badge_text, fill=ACCENT, font=FONT_BOLD_20
 
 # Feature pills
 pill_y = badge_y + bh + 30
-pills = ["Local-first", "25 MCP tools", "Semantic search", "Zero cloud"]
+pills = ["Local-first", "12 MCP tools", "Semantic search", "Zero cloud"]
 px = LEFT_X
 for pill in pills:
     bbox = draw.textbbox((0, 0), pill, font=FONT_REG_20)
