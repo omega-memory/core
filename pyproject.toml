@@ -1,6 +1,6 @@
 [project]
 name = "omega-memory"
-version = "0.10.0"
+version = "0.10.1"
 description = "Persistent memory for AI coding agents — #1 on LongMemEval benchmark"
 readme = "README.md"
 requires-python = ">=3.11"
