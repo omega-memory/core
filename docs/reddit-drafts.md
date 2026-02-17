@@ -22,7 +22,7 @@ The system also supports checkpointing — I can stop mid-refactor, come back th
 
 Some technical details if you're curious:
 - Runs entirely locally — SQLite + ONNX embeddings, no cloud, no API keys
-- 25 MCP tools for storing, querying, and managing memories
+- 12 MCP tools for storing, querying, and managing memories
 - Auto-capture works through Claude Code's hook system (SessionStart, PostToolUse, UserPromptSubmit)
 - Memories decay over time so the context stays relevant — but preferences and error patterns are permanent
 - Scored 95.4% on LongMemEval (#1 on the leaderboard — an academic benchmark for long-term memory, 500 questions)
@@ -37,13 +37,13 @@ Happy to answer questions about how the memory capture works or the MCP integrat
 
 ## Post 2: r/mcp
 
-**Title:** Lessons from building a 25-tool MCP server for persistent agent memory
+**Title:** Lessons from building a 12-tool MCP server for persistent agent memory
 
 **Body:**
 
 I've been building an MCP server that gives AI coding agents persistent memory across sessions. Wanted to share some things I learned about MCP server architecture along the way, since this sub has been helpful.
 
-**The problem:** Claude Code, Cursor, Windsurf — they're all stateless. Every session starts fresh. My server exposes 25 memory tools via MCP so agents can store, query, checkpoint, and manage long-term memory.
+**The problem:** Claude Code, Cursor, Windsurf — they're all stateless. Every session starts fresh. My server exposes 12 memory tools via MCP so agents can store, query, checkpoint, and manage long-term memory.
 
 **Architecture decisions that mattered:**
 

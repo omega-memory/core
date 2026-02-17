@@ -7,7 +7,7 @@ Thank you for your interest in contributing to OMEGA! Please read our [Code of C
 ```bash
 # Clone
 git clone https://github.com/omega-memory/omega-memory.git
-cd core
+cd omega-memory
 
 # Create a virtual environment
 python3 -m venv .venv
@@ -84,7 +84,7 @@ src/omega/
   cli.py               # CLI commands (omega query, setup, etc.)
   server/
     mcp_server.py      # MCP server entry point
-    tool_schemas.py     # Tool definitions (25 tools)
+    tool_schemas.py     # Tool definitions (12 tools)
     handlers.py         # Tool handler implementations
 ```
 

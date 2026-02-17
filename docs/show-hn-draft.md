@@ -18,7 +18,7 @@ OMEGA is a persistent memory system that runs locally on your machine. It captur
 
 - SQLite database for storage (~10 MB for ~600 memories)
 - bge-small-en-v1.5 ONNX embeddings for semantic search (CPU-only, no GPU needed)
-- 27 MCP tools exposed to the agent (store, query, checkpoint, resume, etc.)
+- 12 MCP tools exposed to the agent (store, query, checkpoint, resume, etc.)
 - Hook system in Claude Code auto-captures lessons and decisions without explicit commands
 - Memories are linked via typed edges (related, supersedes, contradicts) forming a knowledge graph
 - All data stays on your machine — no cloud, no telemetry, no external API calls

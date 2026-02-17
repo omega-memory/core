@@ -39,11 +39,6 @@
   "funding": {
     "channels": [
       {
-        "guid": "github-sponsors",
-        "type": "payment-provider",
-        "address": "https://github.com/sponsors/omega-memory"
-      },
-      {
         "guid": "bitcoin",
         "type": "other",
         "description": "Bitcoin (BTC)",
@@ -60,7 +55,6 @@
         "currency": "USD",
         "frequency": "one-time",
         "channels": [
-          "github-sponsors",
           "bitcoin"
         ]
       },
@@ -73,7 +67,7 @@
         "currency": "USD",
         "frequency": "monthly",
         "channels": [
-          "github-sponsors"
+          "bitcoin"
         ]
       }
     ]

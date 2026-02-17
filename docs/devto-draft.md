@@ -43,7 +43,7 @@ The current architecture is much simpler:
             │ stdio/MCP protocol
 ┌───────────▼─────────────┐
 │   OMEGA MCP Server       │
-│   27 memory tools        │
+│   12 memory tools        │
 │                          │
 │  ┌─────────────────────┐ │
 │  │  Hook Daemon (UDS)  │ │    ← Unix Domain Socket for
@@ -145,7 +145,7 @@ Every deletion is audited. You can run `omega_forgetting_log` and see exactly wh
 
 ## Auto-Capture: The Part That Actually Matters
 
-The 27 MCP tools are nice, but the real value is in the hook system. In Claude Code, OMEGA installs four hooks:
+The 12 MCP tools are nice, but the real value is in the hook system. In Claude Code, OMEGA installs four hooks:
 
 | Hook Event | What It Does |
 |---|---|

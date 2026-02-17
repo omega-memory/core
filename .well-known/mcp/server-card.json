@@ -1,7 +1,7 @@
 {
   "serverInfo": {
     "name": "omega-memory",
-    "version": "0.8.0",
+    "version": "0.10.1",
     "title": "OMEGA - Persistent Memory for AI Agents",
     "description": "#1 on LongMemEval (95.4%). Local-first persistent memory for AI coding agents. Semantic search, auto-capture, cross-session learning. Zero cloud dependency."
   },
