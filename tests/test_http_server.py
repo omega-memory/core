@@ -4,6 +4,9 @@ import stat
 import pytest
 from unittest.mock import MagicMock, patch
 
+# starlette is a transitive dep of mcp[server], not installed in base CI
+pytest.importorskip("starlette", reason="starlette not installed (requires 'server' extra)")
+
 from omega.server.http_server import create_http_app, get_or_create_api_key
 
 
