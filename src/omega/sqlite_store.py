@@ -316,7 +316,7 @@ class SQLiteStore:
     }
 
     # Abstention thresholds — minimum quality for results to survive
-    _MIN_VEC_SIMILARITY = 0.50  # Minimum cosine similarity for vec results
+    _MIN_VEC_SIMILARITY = 0.60  # Minimum cosine similarity for vec results (raised from 0.50)
     _MIN_TEXT_RELEVANCE = 0.35  # Minimum raw word overlap ratio for text-only results
     _MIN_COMPOSITE_SCORE = 0.10  # Absolute floor on composite score (catches temporal penalty)
     _MIN_VEC_CANDIDATES = 20  # Floor on vector candidate pool (prevents small limit from dropping good matches)
@@ -544,11 +544,19 @@ class SQLiteStore:
             "entity_id",
             "agent_type",
             "canonical_hash",
+            "last_accessed",
+            "ttl_seconds",
         ):
             c.execute(f"""
                 CREATE INDEX IF NOT EXISTS idx_memories_{col}
                 ON memories({col})
             """)
+
+        # Compound indexes for frequent query patterns
+        c.execute("""
+            CREATE INDEX IF NOT EXISTS idx_memories_event_access
+            ON memories(event_type, access_count)
+        """)
 
         # sqlite-vec virtual table
         if self._vec_available:
@@ -1083,9 +1091,15 @@ class SQLiteStore:
         # Phase 1: Vector similarity search
         if self._vec_available and not skip_vec:
             try:
-                from omega.graphs import generate_embedding
+                from omega.graphs import generate_embedding, is_embedding_degraded
 
                 query_emb = generate_embedding(query_text)
+                if is_embedding_degraded() and not getattr(self, "_hash_fallback_warned", False):
+                    logger.warning(
+                        "Query using hash-fallback embeddings — vector results will be low quality. "
+                        "Check ONNX model installation."
+                    )
+                    self._hash_fallback_warned = True
                 if query_emb:
                     vec_mult = 5
                     vec_limit = max(limit * vec_mult, self._MIN_VEC_CANDIDATES)
@@ -2298,14 +2312,21 @@ class SQLiteStore:
         nodes = data.get("nodes", [])
 
         if clear_existing:
-            self._conn.execute("DELETE FROM memories")
-            if self._vec_available:
-                try:
-                    self._conn.execute("DELETE FROM memories_vec")
-                except Exception as e:
-                    logger.debug("Vec table clear during import failed: %s", e)
-            self._conn.execute("DELETE FROM edges")
-            self._commit()
+            # Atomic clear+import: use EXCLUSIVE transaction to prevent
+            # concurrent queries from seeing empty DB between clear and import
+            self._conn.execute("BEGIN EXCLUSIVE")
+            try:
+                self._conn.execute("DELETE FROM memories")
+                if self._vec_available:
+                    try:
+                        self._conn.execute("DELETE FROM memories_vec")
+                    except Exception as e:
+                        logger.debug("Vec table clear during import failed: %s", e)
+                self._conn.execute("DELETE FROM edges")
+                self._conn.execute("COMMIT")
+            except Exception:
+                self._conn.execute("ROLLBACK")
+                raise
 
         imported = 0
         for node_data in nodes:

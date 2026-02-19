@@ -77,7 +77,8 @@ _BLOCKLIST_CONTAINS = [
 ]
 
 # Minimum content length for auto-capture (reject very short noise).
-_MIN_CONTENT_LENGTH = 40
+# Raised from 40 to 80 to filter infrastructure noise that inflates never-accessed count.
+_MIN_CONTENT_LENGTH = 80
 
 
 def _check_milestone(name: str) -> bool:
@@ -99,7 +100,11 @@ _store_lock = threading.Lock()
 
 
 def _get_store():
-    """Get or create the SQLiteStore singleton (thread-safe)."""
+    """Get or create the SQLiteStore singleton (thread-safe).
+
+    Uses local variable for init to ensure _store_instance is only set
+    after full initialization (migration + cleanup + atexit registration).
+    """
     global _store_instance
     if _store_instance is not None:
         return _store_instance
@@ -113,12 +118,14 @@ def _get_store():
 
         from omega.sqlite_store import SQLiteStore
 
-        _store_instance = SQLiteStore()
+        # Init into local var first; only publish to global after full setup
+        store = SQLiteStore()
         # Purge expired nodes on startup
-        expired = _store_instance.cleanup_expired()
+        expired = store.cleanup_expired()
         if expired > 0:
             logger.info(f"Startup: purged {expired} expired nodes")
         atexit.register(_close_store)
+        _store_instance = store  # Publish only after full init
     return _store_instance
 
 
