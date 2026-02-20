@@ -99,7 +99,7 @@ def _get_fernet():
         _fernet_instance = Fernet(key)
         return _fernet_instance
     except Exception as e:
-        logger.error(f"Failed to initialize encryption: {e}")
+        logger.error(f"Failed to initialize encryption: {e}", exc_info=True)
         return None
 
 

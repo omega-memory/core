@@ -452,7 +452,7 @@ def auto_migrate_if_needed() -> bool:
             return True
         return False
     except Exception as e:
-        logger.error(f"Auto-migration failed: {e}")
+        logger.error(f"Auto-migration failed: {e}", exc_info=True)
         print(f"OMEGA: Auto-migration failed: {e}")
         print("  Run 'omega migrate-db --force' to retry manually.")
         return False

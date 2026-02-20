@@ -38,7 +38,9 @@ Thumbs.db
 
 # Environment
 .env
-.env.local
+.env.*
+!.env.example
+!.env*.example
 .mcpregistry*
 
 # Project-local agent instructions (contains internal references)
