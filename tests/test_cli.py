@@ -115,7 +115,7 @@ class TestFormatAge:
 
     def test_naive_datetime_treated_as_utc(self):
         """Naive datetimes (no tzinfo) should be treated as UTC without error."""
-        naive_ts = datetime.utcnow() - timedelta(hours=2)
+        naive_ts = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=2)
         result = _format_age(naive_ts)
         assert result == "2h ago"
 

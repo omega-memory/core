@@ -186,7 +186,7 @@ TOOL_SCHEMAS = [
                 "warn_mb": {"type": "number", "description": "Warning threshold MB (health, default 350)", "default": 350},
                 "critical_mb": {"type": "number", "description": "Critical threshold MB (health, default 800)", "default": 800},
                 "max_nodes": {"type": "integer", "description": "Max expected nodes (health, default 10000)", "default": 10000},
-                "prune_days": {"type": "integer", "description": "Prune zero-access older than N days (consolidate, default 30)", "default": 30},
+                "prune_days": {"type": "integer", "description": "Prune zero-access older than N days (consolidate, default 14)", "default": 14},
                 "max_summaries": {"type": "integer", "description": "Max session summaries (consolidate, default 50)", "default": 50},
                 "event_type": {"type": "string", "description": "Type to compact (compact, default lesson_learned)", "default": "lesson_learned"},
                 "similarity_threshold": {"type": "number", "description": "Jaccard similarity 0.0-1.0 (compact, default 0.6)", "default": 0.6},

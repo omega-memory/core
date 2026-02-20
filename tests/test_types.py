@@ -23,8 +23,8 @@ class TestForEventType:
     def test_known_type_returns_correct_ttl(self):
         assert TTLCategory.for_event_type("lesson_learned") == TTLCategory.PERMANENT
 
-    def test_session_summary_is_short_term(self):
-        assert TTLCategory.for_event_type("session_summary") == TTLCategory.SHORT_TERM
+    def test_session_summary_is_ephemeral(self):
+        assert TTLCategory.for_event_type("session_summary") == TTLCategory.EPHEMERAL
 
     def test_unknown_type_defaults_to_long_term(self):
         assert TTLCategory.for_event_type("completely_unknown_type") == TTLCategory.LONG_TERM

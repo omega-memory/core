@@ -89,7 +89,7 @@ async def handle_omega_store(arguments: dict) -> dict:
         )
         return mcp_response(result)
     except Exception as e:
-        logger.error("omega_store failed: %s", e)
+        logger.error("omega_store failed: %s", e, exc_info=True)
         import traceback
         tb = traceback.format_exc()
         logger.error("omega_store traceback: %s", tb)
@@ -131,7 +131,7 @@ async def handle_omega_query(arguments: dict) -> dict:
             )
             return mcp_response(result)
         except Exception as e:
-            logger.error("omega_query (phrase) failed: %s", e)
+            logger.error("omega_query (phrase) failed: %s", e, exc_info=True)
             return mcp_error("Phrase search failed")
 
     # Semantic mode (default)
@@ -165,7 +165,7 @@ async def handle_omega_query(arguments: dict) -> dict:
         )
         return mcp_response(result)
     except Exception as e:
-        logger.error("omega_query failed: %s", e)
+        logger.error("omega_query failed: %s", e, exc_info=True)
         return mcp_error("Query failed")
 
 
@@ -186,7 +186,7 @@ async def handle_omega_welcome(arguments: dict) -> dict:
         briefing = welcome(session_id=session_id, project=project)
         return mcp_response(json.dumps(briefing, indent=2))
     except Exception as e:
-        logger.error("omega_welcome failed: %s", e)
+        logger.error("omega_welcome failed: %s", e, exc_info=True)
         return mcp_error("Welcome briefing failed")
 
 
@@ -224,7 +224,7 @@ async def handle_omega_profile(arguments: dict) -> dict:
             else:
                 return mcp_error("Failed to save profile to disk.")
         except Exception as e:
-            logger.error("omega_profile (save) failed: %s", e)
+            logger.error("omega_profile (save) failed: %s", e, exc_info=True)
             return mcp_error("Save profile failed")
     else:
         # Read mode
@@ -237,7 +237,7 @@ async def handle_omega_profile(arguments: dict) -> dict:
                 return mcp_response("No profile found. Preferences will build your profile over time.")
             return mcp_response(json.dumps(profile, indent=2))
         except Exception as e:
-            logger.error("omega_profile failed: %s", e)
+            logger.error("omega_profile failed: %s", e, exc_info=True)
             return mcp_error("Profile failed")
 
 
@@ -261,7 +261,7 @@ async def handle_omega_delete_memory(arguments: dict) -> dict:
         else:
             return mcp_error(result.get("error", f"Memory {memory_id} not found"))
     except Exception as e:
-        logger.error("omega_delete_memory failed: %s", e)
+        logger.error("omega_delete_memory failed: %s", e, exc_info=True)
         return mcp_error("Delete failed")
 
 
@@ -289,7 +289,7 @@ async def handle_omega_edit_memory(arguments: dict) -> dict:
         else:
             return mcp_error(result.get("error", f"Memory {memory_id} not found"))
     except Exception as e:
-        logger.error("omega_edit_memory failed: %s", e)
+        logger.error("omega_edit_memory failed: %s", e, exc_info=True)
         return mcp_error("Edit failed")
 
 
@@ -319,7 +319,7 @@ async def handle_omega_list_preferences(arguments: dict) -> dict:
 
         return mcp_response("\n".join(lines))
     except Exception as e:
-        logger.error("omega_list_preferences failed: %s", e)
+        logger.error("omega_list_preferences failed: %s", e, exc_info=True)
         return mcp_error("List preferences failed")
 
 
@@ -349,7 +349,7 @@ async def handle_omega_health(arguments: dict) -> dict:
 
         return mcp_response(result)
     except Exception as e:
-        logger.error("omega_health failed: %s", e)
+        logger.error("omega_health failed: %s", e, exc_info=True)
         return mcp_error("Health check failed")
 
 
@@ -381,7 +381,7 @@ async def handle_omega_backup(arguments: dict) -> dict:
             result = import_memories(filepath=str(resolved), clear_existing=clear_existing)
             return mcp_response(result)
         except Exception as e:
-            logger.error("omega_backup import failed: %s", e)
+            logger.error("omega_backup import failed: %s", e, exc_info=True)
             return mcp_error("Import failed (internal error)")
     else:
         try:
@@ -399,7 +399,7 @@ async def handle_omega_backup(arguments: dict) -> dict:
                 )
             return mcp_response(result)
         except Exception as e:
-            logger.error("omega_backup export failed: %s", e)
+            logger.error("omega_backup export failed: %s", e, exc_info=True)
             return mcp_error("Export failed (internal error)")
 
 
@@ -460,7 +460,7 @@ async def handle_omega_lessons(arguments: dict) -> dict:
                 output += f"*Access count: {access} | Session: {lesson.get('session_id', 'unknown')[:16]}*\n\n"
             return mcp_response(output)
     except Exception as e:
-        logger.error("omega_lessons failed: %s", e)
+        logger.error("omega_lessons failed: %s", e, exc_info=True)
         return mcp_error("Lessons failed")
 
 
@@ -494,7 +494,7 @@ async def handle_omega_feedback(arguments: dict) -> dict:
             f"({result.get('total_signals', 0)} total signals)"
         )
     except Exception as e:
-        logger.error("omega_feedback failed: %s", e)
+        logger.error("omega_feedback failed: %s", e, exc_info=True)
         return mcp_error("Feedback failed")
 
 
@@ -515,7 +515,7 @@ async def handle_omega_clear_session(arguments: dict) -> dict:
         result = clear_session(session_id=session_id)
         return mcp_response(f"Cleared session `{session_id[:16]}`: {result.get('removed', 0)} memories removed.")
     except Exception as e:
-        logger.error("omega_clear_session failed: %s", e)
+        logger.error("omega_clear_session failed: %s", e, exc_info=True)
         return mcp_error("Clear session failed")
 
 
@@ -535,7 +535,7 @@ async def handle_omega_consolidate(arguments: dict) -> dict:
         result = consolidate(prune_days=prune_days, max_summaries=max_summaries)
         return mcp_response(result)
     except Exception as e:
-        logger.error("omega_consolidate failed: %s", e)
+        logger.error("omega_consolidate failed: %s", e, exc_info=True)
         return mcp_error("Consolidation failed")
 
 
@@ -558,7 +558,7 @@ async def handle_omega_similar(arguments: dict) -> dict:
         result = find_similar_memories(memory_id=memory_id, limit=limit)
         return mcp_response(result)
     except Exception as e:
-        logger.error("omega_similar failed: %s", e)
+        logger.error("omega_similar failed: %s", e, exc_info=True)
         return mcp_error("Similar search failed")
 
 
@@ -578,7 +578,7 @@ async def handle_omega_timeline(arguments: dict) -> dict:
         result = timeline(days=days, limit_per_day=limit_per_day)
         return mcp_response(result)
     except Exception as e:
-        logger.error("omega_timeline failed: %s", e)
+        logger.error("omega_timeline failed: %s", e, exc_info=True)
         return mcp_error("Timeline failed")
 
 
@@ -606,7 +606,7 @@ async def handle_omega_traverse(arguments: dict) -> dict:
         )
         return mcp_response(result)
     except Exception as e:
-        logger.error("omega_traverse failed: %s", e)
+        logger.error("omega_traverse failed: %s", e, exc_info=True)
         return mcp_error("Traverse failed")
 
 
@@ -633,7 +633,7 @@ async def handle_omega_compact(arguments: dict) -> dict:
         )
         return mcp_response(result)
     except Exception as e:
-        logger.error("omega_compact failed: %s", e)
+        logger.error("omega_compact failed: %s", e, exc_info=True)
         return mcp_error("Compact failed")
 
 
@@ -660,7 +660,7 @@ async def handle_omega_type_stats(arguments: dict) -> dict:
             lines.append(f"- **{etype}**: {count} ({pct:.1f}%)")
         return mcp_response("\n".join(lines))
     except Exception as e:
-        logger.error("omega_type_stats failed: %s", e)
+        logger.error("omega_type_stats failed: %s", e, exc_info=True)
         return mcp_error("Type stats failed")
 
 
@@ -687,7 +687,7 @@ async def handle_omega_session_stats(arguments: dict) -> dict:
             lines.append(f"- `{truncated}`: {count} memories")
         return mcp_response("\n".join(lines))
     except Exception as e:
-        logger.error("omega_session_stats failed: %s", e)
+        logger.error("omega_session_stats failed: %s", e, exc_info=True)
         return mcp_error("Session stats failed")
 
 
@@ -734,7 +734,7 @@ async def handle_omega_weekly_digest(arguments: dict) -> dict:
 
         return mcp_response("\n".join(lines))
     except Exception as e:
-        logger.error("omega_weekly_digest failed: %s", e)
+        logger.error("omega_weekly_digest failed: %s", e, exc_info=True)
         return mcp_error("Weekly digest failed")
 
 
@@ -817,7 +817,7 @@ async def handle_omega_checkpoint(arguments: dict) -> dict:
         )
         return mcp_response(f"{result}\n\nCheckpoint #{checkpoint_num} saved for: {task_title}")
     except Exception as e:
-        logger.error("omega_checkpoint failed: %s", e)
+        logger.error("omega_checkpoint failed: %s", e, exc_info=True)
         return mcp_error(f"Checkpoint failed: {e}")
 
 
@@ -887,7 +887,7 @@ async def handle_omega_resume_task(arguments: dict) -> dict:
 
         return mcp_response("\n".join(lines))
     except Exception as e:
-        logger.error("omega_resume_task failed: %s", e)
+        logger.error("omega_resume_task failed: %s", e, exc_info=True)
         return mcp_error(f"Resume failed: {e}")
 
 
@@ -928,7 +928,7 @@ async def handle_omega_remind(arguments: dict) -> dict:
     except ValueError as e:
         return mcp_error(str(e))
     except Exception as e:
-        logger.error("omega_remind failed: %s", e)
+        logger.error("omega_remind failed: %s", e, exc_info=True)
         return mcp_error(f"Failed to create reminder: {e}")
 
 
@@ -963,7 +963,7 @@ async def handle_omega_remind_list(arguments: dict) -> dict:
 
         return mcp_response("\n".join(lines))
     except Exception as e:
-        logger.error("omega_remind_list failed: %s", e)
+        logger.error("omega_remind_list failed: %s", e, exc_info=True)
         return mcp_error(f"Failed to list reminders: {e}")
 
 
@@ -986,7 +986,7 @@ async def handle_omega_remind_dismiss(arguments: dict) -> dict:
             return mcp_response(f"Dismissed reminder: {result.get('text', reminder_id)}")
         return mcp_error(result.get("error", "Failed to dismiss reminder"))
     except Exception as e:
-        logger.error("omega_remind_dismiss failed: %s", e)
+        logger.error("omega_remind_dismiss failed: %s", e, exc_info=True)
         return mcp_error(f"Failed to dismiss reminder: {e}")
 
 
@@ -1120,7 +1120,7 @@ async def handle_omega_access_rate(arguments: dict) -> dict:
 
         return mcp_response(output)
     except Exception as e:
-        logger.error("omega_access_rate failed: %s", e)
+        logger.error("omega_access_rate failed: %s", e, exc_info=True)
         return mcp_error(f"Access rate query failed: {e}")
 
 

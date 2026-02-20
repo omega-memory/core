@@ -261,9 +261,9 @@ class TestSessionSummaryInfrastructure:
         ]
         assert len(summary_results) == 0
 
-    def test_session_summary_ttl_short_term(self):
+    def test_session_summary_ttl_ephemeral(self):
         from omega.types import TTLCategory, AutoCaptureEventType, EVENT_TYPE_TTL
-        assert EVENT_TYPE_TTL[AutoCaptureEventType.SESSION_SUMMARY] == TTLCategory.SHORT_TERM
+        assert EVENT_TYPE_TTL[AutoCaptureEventType.SESSION_SUMMARY] == TTLCategory.EPHEMERAL
 
 
 class TestBlocklistScoping:

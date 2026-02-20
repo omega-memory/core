@@ -66,7 +66,7 @@ class AutoCaptureEventType:
 
 # Map event types to TTL categories
 EVENT_TYPE_TTL: Dict[str, Optional[int]] = {
-    AutoCaptureEventType.SESSION_SUMMARY: TTLCategory.SHORT_TERM,  # was LONG_TERM: old summaries expire after 1 day
+    AutoCaptureEventType.SESSION_SUMMARY: TTLCategory.EPHEMERAL,  # 1 hour: available during session, don't accumulate
     AutoCaptureEventType.TASK_COMPLETION: TTLCategory.LONG_TERM,
     AutoCaptureEventType.ERROR_PATTERN: TTLCategory.PERMANENT,
     AutoCaptureEventType.LESSON_LEARNED: TTLCategory.PERMANENT,
@@ -98,7 +98,7 @@ EVENT_TYPE_TTL: Dict[str, Optional[int]] = {
     "benchmark_update": TTLCategory.LONG_TERM,
     "file_conflict": TTLCategory.LONG_TERM,
     "session_respawn": TTLCategory.LONG_TERM,
-    "memory": TTLCategory.LONG_TERM,
+    "memory": TTLCategory.SHORT_TERM,  # Generic type with no query path; expire quickly
     # Context virtualization (7 days)
     AutoCaptureEventType.CHECKPOINT: 604800,  # 7 days
     # Proactive reminders (permanent until dismissed)

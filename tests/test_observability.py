@@ -196,26 +196,30 @@ class TestAutoConsolidation:
     def test_skips_if_recent(self, tmp_omega_dir):
         """Auto-consolidation skips if marker is < 7 days old."""
         marker = tmp_omega_dir / "last-consolidate"
-        from datetime import datetime
-        marker.write_text(datetime.utcnow().isoformat())
+        from datetime import datetime, timezone
+        marker.write_text(datetime.now(timezone.utc).isoformat())
 
         # Import and run — should be a no-op
         # We can't easily test the hook directly, but we can test the logic
         last_ts = marker.read_text().strip()
         last = datetime.fromisoformat(last_ts)
-        age_days = (datetime.utcnow() - last).days
+        if last.tzinfo is None:
+            last = last.replace(tzinfo=timezone.utc)
+        age_days = (datetime.now(timezone.utc) - last).days
         assert age_days < 7  # Should skip
 
     def test_runs_if_stale(self, tmp_omega_dir):
         """Auto-consolidation runs if marker is > 7 days old."""
         marker = tmp_omega_dir / "last-consolidate"
-        from datetime import datetime, timedelta
-        old_date = datetime.utcnow() - timedelta(days=8)
+        from datetime import datetime, timedelta, timezone
+        old_date = datetime.now(timezone.utc) - timedelta(days=8)
         marker.write_text(old_date.isoformat())
 
         last_ts = marker.read_text().strip()
         last = datetime.fromisoformat(last_ts)
-        age_days = (datetime.utcnow() - last).days
+        if last.tzinfo is None:
+            last = last.replace(tzinfo=timezone.utc)
+        age_days = (datetime.now(timezone.utc) - last).days
         assert age_days >= 7  # Should run
 
 
