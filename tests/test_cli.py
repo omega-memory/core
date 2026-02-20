@@ -19,7 +19,10 @@ from omega.cli import (
     OMEGA_END,
     cmd_query,
     cmd_remember,
+    cmd_stats,
+    cmd_status,
     cmd_store,
+    cmd_timeline,
 )
 
 
@@ -526,6 +529,107 @@ class TestCmdDoctorBridgeCheck:
         assert callable(status)
         assert callable(auto_capture)
         assert callable(query)
+
+
+# ============================================================================
+# cmd_status() --json
+# ============================================================================
+
+
+class TestCmdStatusJson:
+    """Tests for cmd_status --json output."""
+
+    def test_json_output_mode(self, capsys):
+        """--json flag should output valid JSON with expected keys."""
+        fake_data = {
+            "backend": "sqlite",
+            "memory_count": 42,
+            "db_size_mb": 1.5,
+            "vector_search": True,
+            "model": "bge-small-en-v1.5",
+        }
+        args = argparse.Namespace(json=True)
+
+        with patch("omega.cli._collect_status_data", return_value=fake_data):
+            cmd_status(args)
+
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert parsed["memory_count"] == 42
+        assert parsed["backend"] == "sqlite"
+
+
+# ============================================================================
+# cmd_timeline() --json
+# ============================================================================
+
+
+class TestCmdTimelineJson:
+    """Tests for cmd_timeline --json output."""
+
+    def test_json_output_mode(self, capsys):
+        """--json flag should output valid JSON grouped by day."""
+        from unittest.mock import MagicMock
+
+        node = MagicMock()
+        node.id = "abc123"
+        node.content = "test timeline entry"
+        node.metadata = {"event_type": "decision"}
+        node.created_at = datetime(2026, 2, 20, 10, 30, tzinfo=timezone.utc)
+
+        fake_timeline = {"2026-02-20": [node]}
+        args = argparse.Namespace(days=7, json=True)
+
+        mock_store = MagicMock()
+        mock_store.get_timeline.return_value = fake_timeline
+
+        with patch("omega.bridge._get_store", return_value=mock_store):
+            cmd_timeline(args)
+
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert "2026-02-20" in parsed
+        assert parsed["2026-02-20"][0]["id"] == "abc123"
+        assert parsed["2026-02-20"][0]["event_type"] == "decision"
+
+    def test_json_empty_timeline(self, capsys):
+        """Empty timeline should output empty JSON object."""
+        from unittest.mock import MagicMock
+
+        args = argparse.Namespace(days=7, json=True)
+        mock_store = MagicMock()
+        mock_store.get_timeline.return_value = {}
+
+        with patch("omega.bridge._get_store", return_value=mock_store):
+            cmd_timeline(args)
+
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert parsed == {}
+
+
+# ============================================================================
+# cmd_stats() --json
+# ============================================================================
+
+
+class TestCmdStatsJson:
+    """Tests for cmd_stats --json output."""
+
+    def test_json_output_mode(self, capsys):
+        """--json flag should output valid JSON with types and health."""
+        fake_stats = {"decision": 10, "lesson_learned": 5, "error_pattern": 3}
+        fake_health = {"db_size_mb": 2.0, "edge_count": 15, "backend": "sqlite"}
+        args = argparse.Namespace(json=True)
+
+        with patch("omega.bridge.type_stats", return_value=fake_stats), \
+             patch("omega.bridge.status", return_value=fake_health):
+            cmd_stats(args)
+
+        out = capsys.readouterr().out
+        parsed = json.loads(out)
+        assert parsed["types"]["decision"] == 10
+        assert parsed["health"]["db_size_mb"] == 2.0
 
 
 # ============================================================================
