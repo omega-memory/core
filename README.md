@@ -236,6 +236,50 @@ That's it. Every SSH session — from your laptop, phone, or tablet — now has 
 
 **Requirements:** Any VPS with Python 3.11+ (~337 MB RAM after first query). SQLite + CPU-only ONNX embeddings — zero external services.
 
+## Windows (WSL) Setup
+
+OMEGA runs on Windows through [WSL 2](https://learn.microsoft.com/en-us/windows/wsl/install) (Windows Subsystem for Linux). WSL 1 works but WSL 2 is recommended for better SQLite performance.
+
+**1. Install WSL 2 (if you don't have it)**
+
+```powershell
+# In PowerShell (admin)
+wsl --install
+```
+
+This installs Ubuntu by default. Restart when prompted.
+
+**2. Install Python 3.11+ inside WSL**
+
+```bash
+# In your WSL terminal
+sudo apt update && sudo apt install -y python3 python3-pip python3-venv
+python3 --version   # should be 3.11+
+```
+
+If your distro ships an older Python, use the deadsnakes PPA:
+
+```bash
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt update && sudo apt install -y python3.12 python3.12-venv
+```
+
+**3. Install and set up OMEGA**
+
+```bash
+pip3 install omega-memory[server]
+omega setup
+omega doctor
+```
+
+**WSL-specific gotchas:**
+
+- **Use the Linux filesystem, not `/mnt/c/`.** OMEGA stores data in `~/.omega/` inside WSL. Keep your projects on the Linux side (`~/Projects/`) for best performance. Accessing files on `/mnt/c/` is significantly slower due to filesystem translation.
+- **Keyring may not work out of the box.** If you use `omega-memory[encrypt]`, the keyring backend needs configuration. Install `keyrings.alt` for a file-based backend: `pip3 install keyrings.alt`. Alternatively, set the environment variable `OMEGA_ENCRYPTION_KEY` directly.
+- **Claude Code runs inside WSL.** Install Claude Code in your WSL terminal, not in Windows PowerShell. Your `~/.claude/` config lives in the WSL filesystem.
+- **Model cache path.** The ONNX embedding model downloads to `~/.cache/omega/models/` inside WSL (~90 MB). This is separate from any Windows-side cache.
+- **Multiple WSL distros.** Each distro has its own `~/.omega/` directory. If you switch distros, your memories don't carry over. Copy `~/.omega/omega.db` to transfer them.
+
 <details>
 <summary><strong>Architecture & Advanced Details</strong></summary>
 
