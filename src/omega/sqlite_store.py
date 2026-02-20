@@ -103,7 +103,7 @@ _SURFACING_THRESHOLDS = {
     SurfacingContext.GENERAL:       (0.50, 0.35, 0.10, 1.0),
     SurfacingContext.ERROR_DEBUG:   (0.40, 0.45, 0.08, 1.0),
     SurfacingContext.FILE_EDIT:     (0.50, 0.35, 0.10, 2.0),
-    SurfacingContext.SESSION_START: (0.60, 0.45, 0.15, 1.0),
+    SurfacingContext.SESSION_START: (0.45, 0.40, 0.10, 1.0),
 }
 
 

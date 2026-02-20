@@ -117,7 +117,7 @@ class TestBridge:
                 event_type="lesson_learned",
                 session_id="test-session",
             )
-            assert "Memory Captured" in result or "Memory Deduplicated" in result
+            assert "Memory Captured" in result or "Deduped" in result
 
             query_result = query(query_text="type hints Python", limit=5)
             assert "type hints" in query_result

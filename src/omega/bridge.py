@@ -44,9 +44,9 @@ OMEGA_HOME = Path(os.environ.get("OMEGA_HOME", str(Path.home() / ".omega")))
 # Per-event-type dedup thresholds for Jaccard similarity.
 DEDUP_THRESHOLDS: Dict[str, float] = {
     AutoCaptureEventType.ERROR_PATTERN: 0.70,
-    AutoCaptureEventType.SESSION_SUMMARY: 0.95,
+    AutoCaptureEventType.SESSION_SUMMARY: 0.75,
     AutoCaptureEventType.TASK_COMPLETION: 0.85,
-    AutoCaptureEventType.DECISION: 0.85,
+    AutoCaptureEventType.DECISION: 0.80,
     AutoCaptureEventType.LESSON_LEARNED: 0.85,
     AutoCaptureEventType.CHECKPOINT: 0.90,
 }
@@ -79,6 +79,12 @@ _BLOCKLIST_CONTAINS = [
 # Minimum content length for auto-capture (reject very short noise).
 # Raised from 40 to 80 to filter infrastructure noise that inflates never-accessed count.
 _MIN_CONTENT_LENGTH = 80
+
+# Event types from hooks that generate infrastructure noise (never accessed, inflate DB).
+_INFRASTRUCTURE_EVENT_TYPES = frozenset({
+    "consolidate", "compact", "checkpoint", "coordination_snapshot",
+    "session_respawn", "file_summary", "code_chunk",
+})
 
 
 def _check_milestone(name: str) -> bool:
@@ -659,8 +665,8 @@ def auto_capture(
         try:
             from omega.entity.engine import resolve_project_entity
             entity_id = resolve_project_entity(project)
-        except Exception:
-            pass  # Fail-open: entity resolution is best-effort
+        except Exception as e:
+            logger.debug("Entity resolution failed: %s", e)
 
     # Determine source early — hooks vs direct API calls have different filtering rules.
     _source = (metadata or {}).get("source", "")
@@ -680,6 +686,25 @@ def auto_capture(
     # Min-length gate — only for auto-captured content from hooks, not direct API calls.
     if _is_hook and len(content) < _MIN_CONTENT_LENGTH and event_type != AutoCaptureEventType.USER_PREFERENCE:
         return "**Memory Blocked** (too short)"
+
+    # Block infrastructure event types that generate noise and inflate never-accessed count
+    if _is_hook and event_type in _INFRASTRUCTURE_EVENT_TYPES:
+        return "**Memory Blocked** (infrastructure noise)"
+
+    # Block zero-value outcome records (tokens=0 partial sessions)
+    if _is_hook and event_type == "task_completion" and "tokens=0" in content:
+        return "**Memory Blocked** (zero-token outcome)"
+
+    # Block JSON-blob decisions — raw tool output stored as "decisions"
+    if event_type == "decision":
+        # Strip known prefixes to check the actual body
+        _body = content
+        for _pfx in ("Decision: ", "Plan/decision captured: ", "Fact: "):
+            if _body.startswith(_pfx):
+                _body = _body[len(_pfx):]
+        _body_stripped = _body.lstrip()
+        if _body_stripped.startswith(("{", "[", '"filePath', '"type"')):
+            return "**Memory Blocked** (JSON blob, not a decision)"
 
     store = _get_store()
     meta = dict(metadata or {})
@@ -736,7 +761,8 @@ def auto_capture(
                 if (existing.metadata or {}).get("event_type", "") != event_type:
                     continue
                 # Session filter for dedup: only dedup within same session
-                if session_id:
+                # Exception: decisions dedup cross-session (same architectural choice restated)
+                if session_id and event_type != AutoCaptureEventType.DECISION:
                     existing_session = (existing.metadata or {}).get("session_id", "")
                     if existing_session and existing_session != session_id:
                         continue
@@ -750,8 +776,8 @@ def auto_capture(
                     store.stats["content_dedup_skips"] += 1
                     linked = _auto_relate(store, existing.id)
                     logger.debug(f"Content dedup: skipped {event_type} (jaccard={sim:.2f}), reusing {existing.id[:12]}")
-                    link_info = f", linked to {linked}" if linked else ""
-                    return f"**Memory Deduplicated** (reused existing {existing.id[:12]}{link_info})"
+                    link_info = f", {linked} linked" if linked else ""
+                    return f"Deduped → {existing.id[:12]}{link_info}"
         except Exception as e:
             logger.debug(f"Content dedup check skipped: {e}")
 
@@ -772,7 +798,7 @@ def auto_capture(
                 if not is_novel:
                     store.stats.setdefault("error_burst_skips", 0)
                     store.stats["error_burst_skips"] += 1
-                    return "**Memory Blocked** (error burst — similar error already captured)"
+                    return "Blocked (error burst — duplicate)"
         except Exception as e:
             logger.debug(f"Error burst check skipped: {e}")
 
@@ -826,11 +852,8 @@ def auto_capture(
                         store.stats["memory_evolutions"] += 1
                         linked = _auto_relate(store, existing.id)
                         logger.info(f"Memory evolved: {existing.id[:12]} (evolution #{evo_count}, jaccard={sim:.2f})")
-                        link_info = f" Linked to {linked} related memories." if linked else ""
-                        return (
-                            f"**Memory Evolved** (updated existing `{existing.id[:12]}`)\n"
-                            f"Evolution #{evo_count} -- added new insight from this session.{link_info}"
-                        )
+                        link_info = f", {linked} linked" if linked else ""
+                        return f"Evolved {existing.id[:12]} (#{evo_count}{link_info})"
                     break  # Only try the top match
         except Exception as e:
             logger.debug(f"Memory evolution check skipped: {e}")
@@ -948,7 +971,7 @@ def delete_memory(memory_id: str) -> Dict[str, Any]:
             return {"success": True, "deleted_id": memory_id}
         return {"success": False, "error": f"Memory {memory_id} not found"}
     except Exception as e:
-        logger.error(f"Failed to delete memory {memory_id[:12]}: {e}")
+        logger.error(f"Failed to delete memory {memory_id[:12]}: {e}", exc_info=True)
         return {"success": False, "error": str(e)}
 
 
@@ -975,7 +998,7 @@ def edit_memory(memory_id: str, new_content: str) -> Dict[str, Any]:
             "new_content_preview": new_content[:80],
         }
     except Exception as e:
-        logger.error(f"Failed to edit memory {memory_id[:12]}: {e}")
+        logger.error(f"Failed to edit memory {memory_id[:12]}: {e}", exc_info=True)
         return {"success": False, "error": str(e)}
 
 
@@ -1080,7 +1103,7 @@ def query(
         return output
 
     except Exception as e:
-        logger.error(f"Query failed: {e}")
+        logger.error(f"Query failed: {e}", exc_info=True)
         return f"# Query Error\n\n**Error:** {str(e)}\n"
 
 
@@ -1153,7 +1176,7 @@ def query_structured(
         return structured
 
     except Exception as e:
-        logger.error(f"Structured query failed: {e}")
+        logger.error(f"Structured query failed: {e}", exc_info=True)
         return []
 
 
@@ -1448,7 +1471,7 @@ def status() -> Dict[str, Any]:
             "vec_enabled": health.get("usage", {}).get("vec_enabled", False),
         }
     except Exception as e:
-        logger.error(f"Status check failed: {e}")
+        logger.error(f"Status check failed: {e}", exc_info=True)
         return {"ok": False, "error": str(e)}
 
 
@@ -1632,7 +1655,7 @@ def extract_preferences(text: str) -> Dict[str, Any]:
         )
         return {"success": True, "preferences": [{"key": "raw", "stored": True}], "count": 1}
     except Exception as e:
-        logger.error(f"Preference extraction failed: {e}")
+        logger.error(f"Preference extraction failed: {e}", exc_info=True)
         return {"success": False, "error": str(e)}
 
 
@@ -1651,7 +1674,7 @@ def list_preferences() -> List[Dict[str, Any]]:
             for n in nodes
         ]
     except Exception as e:
-        logger.error(f"list_preferences failed: {e}")
+        logger.error(f"list_preferences failed: {e}", exc_info=True)
         return []
 
 
@@ -1704,7 +1727,7 @@ def save_profile(profile: Dict[str, Any]) -> bool:
             raise
         return True
     except Exception as e:
-        logger.error(f"Failed to save profile: {e}")
+        logger.error(f"Failed to save profile: {e}", exc_info=True)
         return False
 
 
@@ -2574,7 +2597,7 @@ def phrase_search(
         return output
 
     except Exception as e:
-        logger.error(f"Phrase search failed: {e}")
+        logger.error(f"Phrase search failed: {e}", exc_info=True)
         return f"# Phrase Search Error\n\n**Error:** {str(e)}\n"
 
 

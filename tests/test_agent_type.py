@@ -210,7 +210,7 @@ class TestAgentTypeBridge:
             event_type="lesson_learned",
             agent_type="code-reviewer",
         )
-        assert "Memory Captured" in result or "Memory Evolved" in result or "Memory Blocked" not in result
+        assert "Memory Captured" in result or "Evolved" in result or "Blocked" not in result
 
         db = _get_store()
         # Find the stored memory

@@ -233,12 +233,12 @@ class TestContextDependentGating:
         err = _SURFACING_THRESHOLDS[SurfacingContext.ERROR_DEBUG]
         assert err[0] < gen[0]  # Lower min_vec_similarity
 
-    def test_session_start_higher_thresholds(self):
-        """SESSION_START should have higher thresholds than GENERAL."""
-        gen = _SURFACING_THRESHOLDS[SurfacingContext.GENERAL]
+    def test_session_start_broader_surfacing(self):
+        """SESSION_START should surface broadly for better context at startup."""
         start = _SURFACING_THRESHOLDS[SurfacingContext.SESSION_START]
-        assert start[0] >= gen[0]  # Higher min_vec_similarity
-        assert start[1] >= gen[1]  # Higher min_text_relevance
+        assert start[0] > 0  # Has a min_vec_similarity
+        assert start[1] > 0  # Has a min_text_relevance
+        assert start[2] > 0  # Has a min_composite_score
 
     def test_file_edit_boosted_context_weight(self):
         """FILE_EDIT should have boosted context weight."""

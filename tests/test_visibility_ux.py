@@ -7,7 +7,7 @@ Tests:
 - SQLiteStore.get_last_capture_time() public method
 - SQLiteStore.get_session_event_counts() public method
 - Surfacing relevance threshold (>=30%)
-- Capture confirmations (Memory Captured, Memory Evolved)
+- Capture confirmations (Memory Captured, Evolved, Deduped)
 - Session activity report formatting (plurals, labels)
 - Auto-feedback reads and cleans .surfaced.json
 """
@@ -323,7 +323,7 @@ class TestCaptureConfirmations:
         content = "The exact same error repeated for dedup testing purposes with enough words"
         auto_capture(content=content, event_type="error_pattern", session_id="s1")
         result = auto_capture(content=content, event_type="error_pattern", session_id="s1")
-        assert "Deduplicated" in result
+        assert "Deduped" in result
 
     def test_ttl_display_in_capture(self, tmp_omega_dir):
         """Captured memory should show human TTL, not raw seconds."""

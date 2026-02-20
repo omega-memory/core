@@ -852,7 +852,7 @@ def _collect_status_data() -> dict:
         data["database"] = str(db_path)
         data["db_size_mb"] = round(size_mb, 2)
         try:
-            conn = sqlite3.connect(str(db_path))
+            conn = sqlite3.connect(str(db_path), timeout=30)
             data["memory_count"] = conn.execute("SELECT COUNT(*) FROM memories").fetchone()[0]
             try:
                 import sqlite_vec
@@ -924,7 +924,7 @@ def cmd_status(args):
         kv.append(("Database", str(db_path)))
         kv.append(("Size", f"{size_mb:.2f} MB"))
         try:
-            conn = sqlite3.connect(str(db_path))
+            conn = sqlite3.connect(str(db_path), timeout=30)
             count = conn.execute("SELECT COUNT(*) FROM memories").fetchone()[0]
             kv.append(("Memories", str(count)))
             # Check sqlite-vec availability
@@ -1103,7 +1103,7 @@ def cmd_backup(args):
     import sqlite3
     from omega.crypto import secure_connect
 
-    src = sqlite3.connect(str(db_path))
+    src = sqlite3.connect(str(db_path), timeout=30)
     dst = secure_connect(backup_path)
     src.backup(dst)
     dst.close()
@@ -1437,7 +1437,7 @@ def cmd_validate(args):
 
     import sqlite3
 
-    conn = sqlite3.connect(str(db_path))
+    conn = sqlite3.connect(str(db_path), timeout=30)
     errors = 0
 
     print_header("OMEGA Validate")
@@ -1677,7 +1677,7 @@ def cmd_doctor(args):
         try:
             import sqlite3 as _sqlite3
 
-            _conn = _sqlite3.connect(str(db_path))
+            _conn = _sqlite3.connect(str(db_path), timeout=5)
             fts_count = _conn.execute("SELECT COUNT(*) FROM memories_fts").fetchone()[0]
             mem_count = _conn.execute("SELECT COUNT(*) FROM memories").fetchone()[0]
             if fts_count > 0:
@@ -1703,7 +1703,7 @@ def cmd_doctor(args):
         try:
             import sqlite3 as _sqlite3
 
-            _conn = _sqlite3.connect(str(db_path))
+            _conn = _sqlite3.connect(str(db_path), timeout=5)
             try:
                 import sqlite_vec
 
@@ -1731,7 +1731,7 @@ def cmd_doctor(args):
         try:
             import sqlite3 as _sqlite3
 
-            _conn = _sqlite3.connect(str(db_path))
+            _conn = _sqlite3.connect(str(db_path), timeout=5)
             coord_tables = [
                 "coord_sessions",
                 "coord_file_claims",
@@ -1776,7 +1776,7 @@ def cmd_doctor(args):
         try:
             import sqlite3 as _sqlite3
 
-            _conn = _sqlite3.connect(str(db_path))
+            _conn = _sqlite3.connect(str(db_path), timeout=5)
             # Feedback stats
             rows = _conn.execute("SELECT metadata FROM memories WHERE metadata LIKE '%feedback_score%'").fetchall()
             if rows:

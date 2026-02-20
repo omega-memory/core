@@ -286,7 +286,7 @@ class TestObservationCompression:
                 event_type="lesson_learned",
                 session_id="test-obs",
             )
-            assert "Memory Captured" in result or "Memory Evolved" in result
+            assert "Memory Captured" in result or "Evolved" in result
 
             store = _get_store()
             # Find the stored memory

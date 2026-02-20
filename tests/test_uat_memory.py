@@ -112,7 +112,7 @@ class TestUATMemoryLifecycle:
             "event_type": "lesson_learned",
         })
         text = _text(result)
-        assert "Deduplicated" in text or "reused" in text.lower()
+        assert "Deduped" in text or "reused" in text.lower()
 
     @pytest.mark.asyncio
     async def test_edit_memory(self):
@@ -211,7 +211,7 @@ class TestUATMemoryEvolution:
         })
         text = _text(result)
         # Should evolve or deduplicate, not create a completely new memory
-        assert ("Evolved" in text or "Deduplicated" in text or
+        assert ("Evolved" in text or "Deduped" in text or
                 "reused" in text.lower() or "updated" in text.lower())
 
     @pytest.mark.asyncio
@@ -256,7 +256,7 @@ class TestUATMemoryEvolution:
             "event_type": "error_pattern",
         })
         text = _text(result)
-        assert "Deduplicated" in text or "reused" in text.lower()
+        assert "Deduped" in text or "reused" in text.lower()
 
     @pytest.mark.asyncio
     async def test_type_stats_after_stores(self):
