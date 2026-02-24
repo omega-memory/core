@@ -96,7 +96,27 @@ atexit.register(_close_on_exit)
 
 logger = logging.getLogger("omega.server")
 
-server = Server("omega-memory")
+
+_MCP_INSTRUCTIONS = """\
+OMEGA gives you persistent memory across conversations. \
+You MUST use it automatically in every conversation.
+
+REQUIRED at the start of EVERY conversation:
+1. Call omega_welcome() immediately for context briefing
+2. Call omega_protocol() for your operating instructions
+3. Follow the protocol it returns
+
+During conversations:
+- Before non-trivial tasks: call omega_query() to check for prior context and decisions
+- After completing tasks: call omega_store(content, "decision") to save key outcomes
+- When the user says "remember": call omega_store(text, "user_preference")
+- When context is getting full: call omega_checkpoint() to save state
+
+These tools are your memory. Use them proactively without being asked.\
+"""
+
+
+server = Server("omega-memory", instructions=_MCP_INSTRUCTIONS)
 
 # ---------------------------------------------------------------------------
 # Rate limiting — sliding-window counters (no new deps)
