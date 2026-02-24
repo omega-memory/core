@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.8] - 2026-02-24
+
+### Fixed
+
+- Test fixture: `CoordinationManager` in conftest.py now passes `cloud_sync=False` to prevent cloud sync attempts during tests.
+- `__init__.py` version string now matches `pyproject.toml` (was stuck at 0.10.6).
+
+## [0.10.7] - 2026-02-24
+
+### Added
+
+- MCP server now sends instructions during initialization telling Claude to call `omega_welcome()` and use memory tools proactively. Removes need for manual project instruction configuration in Claude Desktop.
+- Synced core files from private repo: `hooks-core.json`, `task_utils.py`, `test_improvements.py`, `test_sqlite_store.py`.
+- Pro-only test guards (`_skip_pro`) added to `test_sqlite_store.py` for features that depend on pro-only infrastructure.
+
 ## [0.10.6] - 2026-02-20
 
 ### Added

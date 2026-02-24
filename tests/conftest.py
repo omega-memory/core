@@ -122,6 +122,6 @@ def coord_mgr(tmp_omega_dir):
     """Create a fresh CoordinationManager for testing."""
     from omega.coordination import CoordinationManager
     db_path = tmp_omega_dir / "test.db"
-    mgr = CoordinationManager(db_path=db_path)
+    mgr = CoordinationManager(db_path=db_path, cloud_sync=False)
     yield mgr
     mgr.close()
