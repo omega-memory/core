@@ -3,6 +3,7 @@
     {"script": "fast_hook.py session_start", "timeout": 5000, "matcher": ""}
   ],
   "Stop": [
+    {"script": "fast_hook.py assistant_capture", "timeout": 3000, "matcher": ""},
     {"script": "fast_hook.py session_stop", "timeout": 5000, "matcher": ""}
   ],
   "UserPromptSubmit": [

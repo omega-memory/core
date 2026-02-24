@@ -239,10 +239,13 @@ class TestMemoryCompaction:
             store = _get_store()
 
             # Create a cluster of similar lesson_learned memories
+            # skip_inference=True to bypass embedding dedup (daemon provides real
+            # embeddings where near-identical content hits 0.88 threshold)
             for i in range(4):
                 store.store(
                     content=f"Lesson learned: always run tests before committing code changes number {i}",
                     metadata={"event_type": "lesson_learned"},
+                    skip_inference=True,
                 )
 
             result = compact(
@@ -265,12 +268,13 @@ class TestMemoryCompaction:
             reset_memory()
             store = _get_store()
 
-            # Create similar memories
+            # Create similar memories (skip_inference to bypass embedding dedup)
             ids = []
             for i in range(4):
                 nid = store.store(
                     content=f"Always validate user input before processing to prevent injection attacks variant {i}",
                     metadata={"event_type": "lesson_learned", "tags": ["security"]},
+                    skip_inference=True,
                 )
                 ids.append(nid)
 

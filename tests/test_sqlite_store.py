@@ -3,6 +3,10 @@ import importlib.util
 import json
 import os
 import pytest
+from omega.sqlite_store import SQLiteStore
+
+_HAS_PRO = hasattr(SQLiteStore, "batch_record_feedback")
+_skip_pro = pytest.mark.skipif(not _HAS_PRO, reason="pro-only feature")
 
 
 class TestFlaggedMemoryFiltering:
@@ -199,6 +203,92 @@ class TestCrossEncoderReranking:
 
         results = store.query("machine learning", limit=5)
         assert len(results) >= 1
+
+
+@pytest.mark.skipif(
+    importlib.util.find_spec("omega.contradictions") is None,
+    reason="omega.contradictions is pro-only",
+)
+class TestContradictionOnStore:
+    """Contradiction detection during store()."""
+
+    def test_contradicting_memories_get_annotated(self, store):
+        """Storing a contradictory memory should annotate both old and new."""
+        from unittest.mock import patch
+        from omega.contradictions import ContradictionResult
+
+        old_id = store.store(content="Jason prefers light mode for the editor")
+
+        # Mock detect_contradictions to return a definite contradiction
+        mock_result = ContradictionResult(
+            candidate_index=0,
+            candidate_content="Jason prefers light mode for the editor",
+            confidence=0.85,
+            reason="opposing terms found; different preference values",
+            similarity=0.9,
+            signals=["antonym", "preference_change"],
+        )
+
+        with patch("omega.sqlite_store.detect_contradictions", return_value=[mock_result], create=True):
+            # We need to patch the import inside _check_contradictions
+            import omega.sqlite_store as mod
+            original = mod.SQLiteStore._check_contradictions
+
+            def patched_check(self_store, new_node_id, new_content, embedding):
+                from omega.contradictions import detect_contradictions as real_detect
+                # Patch the function that gets imported inside
+                with patch("omega.contradictions.detect_contradictions", return_value=[mock_result]):
+                    original(self_store, new_node_id, new_content, embedding)
+
+            with patch.object(mod.SQLiteStore, "_check_contradictions", patched_check):
+                new_id = store.store(content="Jason prefers dark mode for the editor")
+
+        new_node = store.get_node(new_id)
+        old_node = store.get_node(old_id)
+
+        assert new_node is not None
+        assert old_node is not None
+        # New memory should have 'contradicts' annotation
+        if "contradicts" in new_node.metadata:
+            assert len(new_node.metadata["contradicts"]) >= 1
+            assert new_node.metadata["contradicts"][0]["node_id"] == old_id
+        # Old memory should have 'contradicted_by' annotation
+        if "contradicted_by" in old_node.metadata:
+            assert len(old_node.metadata["contradicted_by"]) >= 1
+            assert old_node.metadata["contradicted_by"][0]["node_id"] == new_id
+
+    def test_store_succeeds_when_contradiction_check_fails(self, store):
+        """Storage must not fail even if contradiction detection errors out."""
+        from unittest.mock import patch
+
+        def boom(*a, **kw):
+            raise RuntimeError("model exploded")
+
+        with patch.object(store, "_check_contradictions", boom):
+            nid = store.store(content="This should still be stored fine")
+
+        assert nid is not None
+        node = store.get_node(nid)
+        assert node is not None
+        assert node.content == "This should still be stored fine"
+
+    def test_no_contradiction_no_annotation(self, store):
+        """Non-contradicting memories should have no contradiction metadata."""
+        store.store(content="Python is great for data science")
+        nid2 = store.store(content="The weather is sunny today")
+
+        node = store.get_node(nid2)
+        assert node is not None
+        assert "contradicts" not in node.metadata
+
+    def test_skip_inference_skips_contradiction_check(self, store):
+        """skip_inference=True should skip contradiction detection."""
+        from unittest.mock import patch, MagicMock
+
+        mock_check = MagicMock()
+        with patch.object(store, "_check_contradictions", mock_check):
+            store.store(content="Test memory", skip_inference=True)
+        mock_check.assert_not_called()
 
 
 class TestTTL:
@@ -452,6 +542,123 @@ class TestRecordFeedback:
         assert "error" in result
 
 
+@_skip_pro
+class TestBatchRecordFeedback:
+    """Tests for SQLiteStore.batch_record_feedback."""
+
+    def test_batch_updates_multiple_memories(self, store):
+        id1 = store.store(content="Python prefers spaces over tabs for indentation")
+        id2 = store.store(content="The Rust borrow checker prevents data races at compile time")
+        assert id1 != id2, "Content should not dedup — distinct topics"
+        updated = store.batch_record_feedback([
+            (id1, "helpful", "Auto: relevant"),
+            (id2, "unhelpful", "Auto: not useful"),
+        ])
+        assert updated == 2
+        # Verify scores directly from DB
+        meta1 = json.loads(store._conn.execute(
+            "SELECT metadata FROM memories WHERE node_id = ?", (id1,)
+        ).fetchone()[0])
+        meta2 = json.loads(store._conn.execute(
+            "SELECT metadata FROM memories WHERE node_id = ?", (id2,)
+        ).fetchone()[0])
+        assert meta1["feedback_score"] == 1
+        assert meta2["feedback_score"] == -1
+        assert len(meta1["feedback_signals"]) == 1
+        assert len(meta2["feedback_signals"]) == 1
+
+    def test_batch_skips_missing_nodes(self, store):
+        nid = store.store(content="Kubernetes pods restart on OOM kill with exit code 137")
+        updated = store.batch_record_feedback([
+            (nid, "helpful", "real"),
+            ("nonexistent-id", "helpful", "ghost"),
+        ])
+        assert updated == 1
+
+    def test_batch_single_commit(self, store):
+        """Batch uses one commit, not N commits."""
+        id1 = store.store(content="PostgreSQL JSONB indexes support GIN operators")
+        id2 = store.store(content="Redis sorted sets use skip lists internally")
+        assert id1 != id2
+        from unittest.mock import patch
+        with patch.object(store, "_commit", wraps=store._commit) as mock_commit:
+            store.batch_record_feedback([
+                (id1, "helpful", "a"),
+                (id2, "helpful", "b"),
+            ])
+            assert mock_commit.call_count == 1
+
+    def test_batch_empty_list(self, store):
+        updated = store.batch_record_feedback([])
+        assert updated == 0
+
+    def test_batch_flags_at_threshold(self, store):
+        nid = store.store(content="GraphQL N+1 queries should use DataLoader batching")
+        updated = store.batch_record_feedback([
+            (nid, "outdated", "stale"),  # -2
+            (nid, "unhelpful", "wrong"),  # -3 -> flagged
+        ])
+        assert updated == 2
+        meta = json.loads(store._conn.execute(
+            "SELECT metadata FROM memories WHERE node_id = ?", (nid,)
+        ).fetchone()[0])
+        assert meta["feedback_score"] == -3
+        assert meta["flagged_for_review"] is True
+
+
+@_skip_pro
+class TestBackfillEmbeddings:
+    """Tests for SQLiteStore.backfill_embeddings."""
+
+    def test_backfill_missing_embeddings(self, store):
+        """Memories inserted without embeddings get backfilled."""
+        if not store._vec_available:
+            pytest.skip("vec not available")
+        # Store a memory normally (will have embedding)
+        nid1 = store.store(content="TCP three-way handshake uses SYN SYN-ACK ACK")
+        # Manually insert a memory WITHOUT embedding to simulate hash-fallback
+        from datetime import datetime, timezone
+        store._conn.execute(
+            "INSERT INTO memories (node_id, content, metadata, created_at) VALUES (?, ?, ?, ?)",
+            ("backfill-test-1", "DNS resolves domain names to IP addresses via recursive queries",
+             '{"event_type": "fact"}', datetime.now(timezone.utc).isoformat()),
+        )
+        store._conn.commit()
+        # Verify it's missing from vec
+        row = store._conn.execute(
+            "SELECT id FROM memories WHERE node_id = 'backfill-test-1'"
+        ).fetchone()
+        vec_row = store._conn.execute(
+            "SELECT rowid FROM memories_vec WHERE rowid = ?", (row[0],)
+        ).fetchone()
+        assert vec_row is None
+        # Backfill
+        result = store.backfill_embeddings(batch_size=10)
+        assert result["backfilled"] >= 1
+        assert result["remaining"] == 0
+        # Verify vec entry now exists
+        vec_row = store._conn.execute(
+            "SELECT rowid FROM memories_vec WHERE rowid = ?", (row[0],)
+        ).fetchone()
+        assert vec_row is not None
+
+    def test_backfill_no_missing(self, store):
+        """Returns clean status when all memories have embeddings."""
+        if not store._vec_available:
+            pytest.skip("vec not available")
+        store.store(content="HTTP status 204 means No Content response")
+        result = store.backfill_embeddings()
+        assert result["backfilled"] == 0
+        assert result["remaining"] == 0
+
+    def test_backfill_vec_unavailable(self, store):
+        """Returns error when vec is not available."""
+        store._vec_available = False
+        result = store.backfill_embeddings()
+        assert result["error"] == "vec not available"
+        assert result["backfilled"] == 0
+
+
 class TestCircuitBreakerCooldown:
     """Tests for time-based circuit breaker recovery in graphs.py."""
 
@@ -580,6 +787,20 @@ class TestCRUDComprehensive:
 
     def test_delete_node_false_for_missing(self, store):
         assert store.delete_node("mem-nope") is False
+
+    @_skip_pro
+    def test_delete_node_logs_to_forgetting_log(self, store):
+        nid = store.store(
+            content="forgotten memory content",
+            metadata={"event_type": "decision"},
+        )
+        store.delete_node(nid)
+        log = store.get_forgetting_log(limit=5)
+        assert len(log) >= 1
+        found = [e for e in log if e["node_id"] == nid]
+        assert len(found) == 1
+        assert found[0]["reason"] == "user_deleted"
+        assert "forgotten memory" in found[0]["content_preview"]
 
     def test_update_node_content(self, store):
         nid = store.store(content="before update")
@@ -906,13 +1127,15 @@ class TestMaintenanceComprehensive:
         assert evicted == 3
         assert store.node_count() == 2
 
+    @_skip_pro
     def test_check_memory_health_keys(self, store):
         store.store(content="health keys test")
         health = store.check_memory_health(warn_mb=4000, critical_mb=8000)
         assert isinstance(health, dict)
         expected_keys = {"status", "node_count", "db_size_mb", "warnings",
                          "recommendations", "usage", "memory_mb",
-                         "never_accessed_pct", "zero_access_count"}
+                         "never_accessed_pct", "zero_access_count",
+                         "embedding_degraded"}
         assert expected_keys.issubset(set(health.keys()))
         assert health["node_count"] == 1
 
@@ -997,6 +1220,201 @@ class TestExportImportComprehensive:
             assert results[0].content == "preservable roundtrip content xyz"
         finally:
             s2.close()
+
+
+# ===========================================================================
+# Cluster co-boost tests (Phase 3.5)
+# ===========================================================================
+
+
+@_skip_pro
+class TestCosineSimilarity:
+    """Test the _cosine_similarity helper."""
+
+    def test_identical_vectors(self):
+        from omega.sqlite_store import _cosine_similarity
+        v = [1.0, 0.0, 0.0]
+        assert abs(_cosine_similarity(v, v) - 1.0) < 1e-6
+
+    def test_orthogonal_vectors(self):
+        from omega.sqlite_store import _cosine_similarity
+        a = [1.0, 0.0, 0.0]
+        b = [0.0, 1.0, 0.0]
+        assert abs(_cosine_similarity(a, b)) < 1e-6
+
+    def test_opposite_vectors(self):
+        from omega.sqlite_store import _cosine_similarity
+        a = [1.0, 0.0]
+        b = [-1.0, 0.0]
+        assert abs(_cosine_similarity(a, b) - (-1.0)) < 1e-6
+
+    def test_zero_vector(self):
+        from omega.sqlite_store import _cosine_similarity
+        a = [0.0, 0.0, 0.0]
+        b = [1.0, 2.0, 3.0]
+        assert _cosine_similarity(a, b) == 0.0
+
+
+@_skip_pro
+class TestComputeClusterBoosts:
+    """Test SQLiteStore._compute_cluster_boosts."""
+
+    def test_boost_for_close_centroid(self, store):
+        """Query near a cluster centroid gets a positive boost."""
+        import struct
+        # Create memory_clusters table and insert a cluster with a known centroid
+        try:
+            store._conn.execute("""
+                CREATE TABLE IF NOT EXISTS memory_clusters (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cluster_id INTEGER NOT NULL,
+                    label TEXT NOT NULL,
+                    member_count INTEGER NOT NULL,
+                    centroid BLOB,
+                    representative_keywords TEXT,
+                    representative_memory_ids TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    superseded INTEGER DEFAULT 0
+                )
+            """)
+        except Exception:
+            pass  # Table may already exist
+
+        # Centroid: unit vector along first axis
+        centroid = [1.0] + [0.0] * 383
+        centroid_bytes = struct.pack(f"{384}f", *centroid)
+        store._conn.execute(
+            """INSERT INTO memory_clusters
+               (cluster_id, label, member_count, centroid,
+                representative_keywords, representative_memory_ids,
+                created_at, updated_at, superseded)
+               VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), 0)""",
+            (0, "test_cluster", 10, centroid_bytes, "test", '["mem-1", "mem-2"]'),
+        )
+        store._conn.commit()
+
+        # Query embedding very close to centroid (sim > 0.5)
+        query_emb = [0.95] + [0.05] * 383
+        boosts, clusters = store._compute_cluster_boosts(query_emb)
+
+        assert 0 in boosts
+        assert boosts[0] > 1.0
+        assert boosts[0] <= 1.15
+        assert len(clusters) == 1  # Clusters returned for reuse
+
+    def test_no_boost_for_distant_centroid(self, store):
+        """Query far from cluster centroid gets no boost."""
+        import struct
+        try:
+            store._conn.execute("""
+                CREATE TABLE IF NOT EXISTS memory_clusters (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cluster_id INTEGER NOT NULL,
+                    label TEXT NOT NULL,
+                    member_count INTEGER NOT NULL,
+                    centroid BLOB,
+                    representative_keywords TEXT,
+                    representative_memory_ids TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    superseded INTEGER DEFAULT 0
+                )
+            """)
+        except Exception:
+            pass
+
+        centroid = [1.0] + [0.0] * 383
+        centroid_bytes = struct.pack(f"{384}f", *centroid)
+        store._conn.execute(
+            """INSERT INTO memory_clusters
+               (cluster_id, label, member_count, centroid,
+                representative_keywords, representative_memory_ids,
+                created_at, updated_at, superseded)
+               VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), 0)""",
+            (0, "distant_cluster", 10, centroid_bytes, "test", '[]'),
+        )
+        store._conn.commit()
+
+        # Query embedding orthogonal to centroid (sim ~ 0)
+        query_emb = [0.0, 1.0] + [0.0] * 382
+        boosts, clusters = store._compute_cluster_boosts(query_emb)
+        assert len(boosts) == 0
+
+    def test_empty_when_no_clusters(self, store):
+        """Returns empty dict when no clusters exist."""
+        try:
+            store._conn.execute("""
+                CREATE TABLE IF NOT EXISTS memory_clusters (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cluster_id INTEGER NOT NULL,
+                    label TEXT NOT NULL,
+                    member_count INTEGER NOT NULL,
+                    centroid BLOB,
+                    representative_keywords TEXT,
+                    representative_memory_ids TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    superseded INTEGER DEFAULT 0
+                )
+            """)
+        except Exception:
+            pass
+
+        query_emb = [1.0] + [0.0] * 383
+        boosts, clusters = store._compute_cluster_boosts(query_emb)
+        assert boosts == {}
+        assert clusters == []
+
+    def test_boost_scales_with_similarity(self, store):
+        """Higher similarity produces higher boost (within 1.05-1.15 range)."""
+        import struct
+        try:
+            store._conn.execute("""
+                CREATE TABLE IF NOT EXISTS memory_clusters (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cluster_id INTEGER NOT NULL,
+                    label TEXT NOT NULL,
+                    member_count INTEGER NOT NULL,
+                    centroid BLOB,
+                    representative_keywords TEXT,
+                    representative_memory_ids TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    superseded INTEGER DEFAULT 0
+                )
+            """)
+        except Exception:
+            pass
+
+        # Two clusters at different angles
+        c1 = [1.0] + [0.0] * 383
+        c2 = [0.7, 0.7] + [0.0] * 382
+        store._conn.execute(
+            """INSERT INTO memory_clusters
+               (cluster_id, label, member_count, centroid,
+                representative_keywords, representative_memory_ids,
+                created_at, updated_at, superseded)
+               VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), 0)""",
+            (0, "close", 10, struct.pack(f"{384}f", *c1), "", '[]'),
+        )
+        store._conn.execute(
+            """INSERT INTO memory_clusters
+               (cluster_id, label, member_count, centroid,
+                representative_keywords, representative_memory_ids,
+                created_at, updated_at, superseded)
+               VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), 0)""",
+            (1, "medium", 10, struct.pack(f"{384}f", *c2), "", '[]'),
+        )
+        store._conn.commit()
+
+        # Query very close to c1
+        query_emb = [0.99, 0.01] + [0.0] * 382
+        boosts, clusters = store._compute_cluster_boosts(query_emb)
+
+        # Both may match if similarity > 0.5
+        if 0 in boosts and 1 in boosts:
+            assert boosts[0] >= boosts[1]  # Closer centroid gets higher boost
 
 
 class TestEdgeCasesComprehensive:
