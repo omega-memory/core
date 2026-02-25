@@ -21,7 +21,7 @@ AI coding agents are stateless. Every new session starts from zero.
 
 OMEGA gives AI coding agents long-term memory and cross-session learning, all running locally on your machine.
 
-![OMEGA demo — cross-session memory recall](https://raw.githubusercontent.com/omega-memory/omega-memory/main/assets/demo.gif)
+![OMEGA demo — without memory vs. with OMEGA](https://raw.githubusercontent.com/omega-memory/omega-memory/main/assets/demo.gif)
 
 ---
 

@@ -1,4 +1,4 @@
-# OMEGA Demo — Cross-Session Memory Recall
+# OMEGA Demo — Before/After Memory
 # Run: cd ~/Projects/omega-public && vhs assets/demo.tape
 
 Output assets/demo.gif
@@ -9,7 +9,7 @@ Set Shell "bash"
 Set FontSize 17
 Set FontFamily "Menlo"
 Set Width 860
-Set Height 500
+Set Height 480
 Set Padding 24
 Set Margin 16
 Set BorderRadius 10
@@ -28,4 +28,4 @@ Enter
 Sleep 500ms
 Show
 
-Sleep 28s
+Sleep 36s
