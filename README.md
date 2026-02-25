@@ -1,29 +1,35 @@
 # OMEGA
 
-**The memory system for AI coding agents.** Decisions, lessons, and context that persist across sessions.
+**Persistent memory for AI coding agents.** Your agent remembers decisions, learns from mistakes, and picks up where it left off.
 
 [![PyPI version](https://img.shields.io/pypi/v/omega-memory.svg)](https://pypi.org/project/omega-memory/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/omega-memory/omega-memory?style=social)](https://github.com/omega-memory/omega-memory)
 [![Tests](https://github.com/omega-memory/omega-memory/actions/workflows/test.yml/badge.svg)](https://github.com/omega-memory/omega-memory/actions/workflows/test.yml)
 [![#1 on LongMemEval](https://img.shields.io/badge/LongMemEval-95.4%25_%231_Overall-gold.svg)](https://omegamax.co/benchmarks)
-[![smithery badge](https://smithery.ai/badge/omegamemory/omega-memory)](https://smithery.ai/server/omegamemory/omega-memory)
 
-mcp-name: io.github.omega-memory/omega-memory
+```bash
+pip3 install omega-memory[server]
+omega setup
+```
 
-## The Problem
-
-AI coding agents are stateless. Every new session starts from zero.
-
-- **Context loss.** Agents forget every decision, preference, and architectural choice between sessions. Developers spend 10-30 minutes per session re-explaining context that was already established.
-- **Repeated mistakes.** Without learning from past sessions, agents make the same errors over and over. They don't remember what worked, what failed, or why a particular approach was chosen.
-
-OMEGA gives AI coding agents long-term memory and cross-session learning, all running locally on your machine.
+Works with **Claude Code** | **Cursor** | **Windsurf** | **Zed** | any MCP client
 
 ![OMEGA demo — without memory vs. with OMEGA](https://raw.githubusercontent.com/omega-memory/omega-memory/main/assets/demo.gif)
 
 ---
+
+## Why Not Just Use CLAUDE.md?
+
+Claude Code's built-in `CLAUDE.md` is a flat markdown file. It works for a few notes. It breaks down when:
+
+- **You can't search it.** 200 lines in, you're grepping for context that may or may not be there. OMEGA uses semantic search (bge-small-en-v1.5 embeddings + sqlite-vec) to find relevant memories even when the wording is different.
+- **It doesn't auto-capture.** Every lesson has to be manually written. OMEGA detects decisions and debugging outcomes automatically.
+- **It grows forever.** No dedup, no decay, no contradiction detection. OMEGA auto-resolves conflicts, deduplicates semantically similar entries, and decays stale memories over time.
+- **It's one file per project.** No cross-project learning. OMEGA's memory graph spans your entire development history.
+- **It can't checkpoint.** Stop mid-refactor and there's no way to resume. OMEGA saves task state and picks up exactly where you left off.
+
+CLAUDE.md is fine for "always use tabs." OMEGA is for when your agent needs to actually learn.
 
 ## Quick Start
 
@@ -37,7 +43,13 @@ omega doctor                        # verify everything works
 
 That's it. Start a new Claude Code session and say **"Remember that we always use early returns and never nest more than 2 levels."** Close the session. Open a new one and ask **"What are my code style preferences?"** OMEGA recalls it instantly.
 
-**Full architecture walkthrough and setup guide:** [omegamax.co/quickstart](https://omegamax.co/quickstart)
+**Using Cursor, Windsurf, or Zed?** Install with `pip3 install omega-memory[server]`, then:
+
+```bash
+omega setup --client cursor          # writes ~/.cursor/mcp.json
+omega setup --client windsurf        # writes ~/.codeium/windsurf/mcp_config.json
+omega setup --client zed             # writes ~/.config/zed/settings.json
+```
 
 <details>
 <summary><strong>Alternative install methods</strong></summary>
@@ -74,23 +86,15 @@ omega setup --hooks-only    # auto-capture + memory surfacing, no MCP server (~6
 
 </details>
 
-**Using Cursor, Windsurf, or Zed?** Install with `pip3 install omega-memory[server]`, then:
-
-```bash
-omega setup --client cursor          # writes ~/.cursor/mcp.json
-omega setup --client windsurf        # writes ~/.codeium/windsurf/mcp_config.json
-omega setup --client zed             # writes ~/.config/zed/settings.json
-```
-
-## What Happens Next
+## What It Does
 
 After `omega setup`, OMEGA works in the background. No commands to learn.
 
-**Auto-capture** — When you make a decision or debug an issue, OMEGA detects it and stores it automatically.
+**Auto-capture** -- When you make a decision or debug an issue, OMEGA detects it and stores it automatically.
 
-**Auto-surface** — When you edit a file or start a session, OMEGA surfaces relevant memories from past sessions — even ones you forgot about.
+**Auto-surface** -- When you edit a file or start a session, OMEGA surfaces relevant memories from past sessions.
 
-**Checkpoint & resume** — Stop mid-task, pick up in a new session exactly where you left off.
+**Checkpoint & resume** -- Stop mid-task, pick up in a new session exactly where you left off.
 
 You can also explicitly tell Claude to remember things:
 
@@ -100,17 +104,17 @@ But the real value is what OMEGA does without being asked.
 
 ## Examples
 
-### Architectural Decisions
+**Architectural decisions carry forward:**
 
 > "Remember: we chose PostgreSQL over MongoDB for the orders service because we need ACID transactions for payment processing."
 
 Three weeks later, in a new session:
 
-> "I'm adding a caching layer to the orders service — what should I know?"
+> "I'm adding a caching layer to the orders service -- what should I know?"
 
 OMEGA surfaces the PostgreSQL decision automatically, so Claude doesn't suggest a MongoDB-style approach.
 
-### Learning from Mistakes
+**Mistakes become lessons:**
 
 You spend 30 minutes debugging a Docker build failure. Claude figures it out:
 
@@ -118,87 +122,63 @@ You spend 30 minutes debugging a Docker build failure. Claude figures it out:
 
 OMEGA auto-captures this as a lesson. Next time anyone hits the same Docker issue, Claude already knows the fix.
 
-### Code Preferences
+**Preferences persist:**
 
 > "Remember: always use early returns. Never nest conditionals more than 2 levels deep. Prefer `const` over `let`."
 
 Every future session follows these rules without being told again.
 
-### Task Continuity
+**Tasks survive session boundaries:**
 
 You're mid-refactor when you need to stop:
 
-> "Checkpoint this — I'm halfway through migrating the auth middleware to the new pattern."
+> "Checkpoint this -- I'm halfway through migrating the auth middleware to the new pattern."
 
 Next session:
 
 > "Resume the auth middleware task."
 
-Claude picks up exactly where you left off — files changed, decisions made, what's left to do.
+Claude picks up exactly where you left off.
 
-### Error Patterns
+## How It Compares
 
-Claude encounters the same `ECONNRESET` three sessions in a row. Each time OMEGA surfaces the previous fix:
-
-```
-[error_pattern] ECONNRESET on API calls — caused by connection pool exhaustion.
-Fix: set maxSockets to 50 in the http agent config.
-Accessed 3 times
-```
-
-No more re-debugging the same issue.
-
-## Key Features
-
-- **Auto-Capture & Surfacing** — Hook system automatically captures decisions and lessons, and surfaces relevant memories before edits, at session start, and during work.
-
-- **Persistent Memory** — Stores decisions, lessons, error patterns, and preferences with semantic search. Your agent recalls what matters without you re-explaining everything each session.
-
-- **Semantic Search** — bge-small-en-v1.5 embeddings + sqlite-vec for fast, accurate retrieval. Finds relevant memories even when the wording is different.
-
-- **Cross-Session Learning** — Lessons, preferences, and error patterns accumulate over time. Agents learn from past mistakes and build on previous decisions.
-
-- **Forgetting Intelligence** — Memories decay naturally over time, conflicts auto-resolve, and every deletion is audited. Preferences and error patterns are exempt from decay.
-
-- **Graph Relationships** — Memories are linked with typed edges (related, supersedes, contradicts). Traverse the knowledge graph to find connected context.
-
-- **Encryption at Rest** *(optional)* — AES-256-GCM encrypted storage with macOS Keychain integration. `pip install omega-memory[encrypt]`
-
-- **Plugin Architecture** — Extensible via entry points. Add custom tools and handlers through the plugin system.
-
-## How OMEGA Compares
-
-| Feature | OMEGA | MEMORY.md | Mem0 | Basic MCP Memory |
+| Feature | OMEGA | CLAUDE.md | Mem0 | Basic MCP Memory |
 |---------|:-----:|:---------:|:----:|:----------------:|
 | Persistent across sessions | Yes | Yes | Yes | Yes |
-| Semantic search | Yes | No (file grep only) | Yes | Varies |
-| Auto-capture (no manual effort) | Yes | No (manual edits) | Yes (cloud) | No |
+| Semantic search | Yes | No | Yes | Varies |
+| Auto-capture | Yes | No | Yes (cloud) | No |
 | Contradiction detection | Yes | No | No | No |
-| Checkpoint & resume tasks | Yes | No | No | No |
+| Checkpoint & resume | Yes | No | No | No |
 | Graph relationships | Yes | No | No | No |
 | Cross-session learning | Yes | Limited | Yes | No |
-| Intelligent forgetting | Yes | No (grows forever) | No | No |
-| Local-only (no cloud/API keys) | Yes | Yes | No (API key required) | Yes |
-| Setup complexity | `pip3 install` + `omega setup` | Zero (built-in) | API key + cloud config | Manual JSON config |
+| Intelligent forgetting | Yes | No | No | No |
+| Local-only (no API keys) | Yes | Yes | No | Yes |
+| Setup | `pip install` + `omega setup` | Built-in | API key + cloud | Manual JSON config |
 
-**MEMORY.md** is Claude Code's built-in markdown file -- great for simple notes, but no search, no auto-capture, and it grows unbounded. **Mem0** offers strong semantic memory but requires cloud API keys and has no checkpoint/resume or contradiction detection. **Basic MCP memory servers** (e.g., simple key-value stores) provide persistence but lack the intelligence layer -- no semantic search, no forgetting, no graph.
-
-OMEGA gives you the best of all worlds: fully local, zero cloud dependencies, with intelligent features that go far beyond simple storage.
-
-Full comparison with methodology at [omegamax.co/compare](https://omegamax.co/compare).
+Full comparison at [omegamax.co/compare](https://omegamax.co/compare).
 
 ## Benchmark
 
-OMEGA scores **95.4% task-averaged** on [LongMemEval](https://github.com/xiaowu0162/LongMemEval) (ICLR 2025), an academic benchmark that tests long-term memory across 5 categories: information extraction, multi-session reasoning, temporal reasoning, knowledge updates, and preference tracking. Raw accuracy is 466/500 (93.2%). Task-averaged scoring (mean of per-category accuracies) is the standard methodology used by other systems on the leaderboard. This is the **#1 score on the leaderboard**.
+**#1 on [LongMemEval](https://github.com/xiaowu0162/LongMemEval)** (ICLR 2025) -- the academic benchmark for long-term memory systems. 500 questions testing extraction, reasoning, temporal understanding, and preference tracking.
 
 | System | Score | Notes |
 |--------|------:|-------|
 | **OMEGA** | **95.4%** | **#1** |
 | Mastra | 94.87% | #2 |
-| Emergence | 86.0% | — |
+| Emergence | 86.0% | -- |
 | Zep/Graphiti | 71.2% | Published in their paper |
 
 Details and methodology at [omegamax.co/benchmarks](https://omegamax.co/benchmarks).
+
+## Key Features
+
+- **12 MCP Tools** -- Store, query, traverse, checkpoint, resume, compact, consolidate, and more. Full tool reference at [omegamax.co/docs](https://omegamax.co/docs).
+- **Semantic Search** -- bge-small-en-v1.5 embeddings + sqlite-vec for fast, accurate retrieval.
+- **Auto-Capture & Surfacing** -- Hooks automatically detect decisions and lessons, and surface relevant memories during work.
+- **Graph Relationships** -- Memories linked with typed edges (related, supersedes, contradicts).
+- **Forgetting Intelligence** -- Time decay, conflict resolution, deduplication. Preferences and errors are exempt from decay.
+- **Encryption at Rest** *(optional)* -- AES-256-GCM with macOS Keychain integration. `pip install omega-memory[encrypt]`
+- **Plugin Architecture** -- Extensible via entry points.
 
 ## Compatibility
 
@@ -210,33 +190,23 @@ Details and methodology at [omegamax.co/benchmarks](https://omegamax.co/benchmar
 | Zed | Yes | No | `omega setup --client zed` |
 | Any MCP Client | Yes | No | Manual config (see docs) |
 
-All clients get full access to all 12 core memory tools. Auto-capture hooks (automatic memory surfacing and context capture) require Claude Code.
-
 Requires Python 3.11+. macOS and Linux supported. Windows via WSL.
 
 ## Remote / SSH Setup
 
-Claude Code's SSH support lets you run your agent on a remote server from any device. OMEGA makes that server **remember everything** across sessions and reconnections.
+Run your agent on a remote server, SSH in from any device. OMEGA's memory graph is on the server waiting for you.
 
 ```bash
-# On your remote server (any Linux VPS — no GPU needed)
+# On your remote server (any Linux VPS -- no GPU needed)
 pip3 install omega-memory[server]
 omega setup
 omega doctor
 ```
 
-That's it. Every SSH session — from your laptop, phone, or tablet — now has full memory of every previous session on that server.
+Every SSH session has full memory of every previous session on that server. Survives disconnects. ~337 MB RAM after first query. Zero external services.
 
-**Why this matters:**
-
-- **Device-agnostic memory** — SSH in from any device, OMEGA's memory graph is on the server waiting for you
-- **Survives disconnects** — SSH drops? Reconnect and `omega_resume_task` picks up exactly where you left off
-- **Always-on accumulation** — A cloud VM running 24/7 means your memory graph grows continuously
-- **Team-ready** — Multiple developers SSH to the same server? OMEGA tracks who's working on what with file claims, handoff notes, and peer messaging
-
-**Requirements:** Any VPS with Python 3.11+ (~337 MB RAM after first query). SQLite + CPU-only ONNX embeddings — zero external services.
-
-## Windows (WSL) Setup
+<details>
+<summary><strong>Windows (WSL) Setup</strong></summary>
 
 OMEGA runs on Windows through [WSL 2](https://learn.microsoft.com/en-us/windows/wsl/install) (Windows Subsystem for Linux). WSL 1 works but WSL 2 is recommended for better SQLite performance.
 
@@ -272,42 +242,39 @@ omega setup
 omega doctor
 ```
 
-**WSL-specific gotchas:**
+**WSL-specific notes:**
 
-- **Use the Linux filesystem, not `/mnt/c/`.** OMEGA stores data in `~/.omega/` inside WSL. Keep your projects on the Linux side (`~/Projects/`) for best performance. Accessing files on `/mnt/c/` is significantly slower due to filesystem translation.
-- **Keyring may not work out of the box.** If you use `omega-memory[encrypt]`, the keyring backend needs configuration. Install `keyrings.alt` for a file-based backend: `pip3 install keyrings.alt`. Alternatively, set the environment variable `OMEGA_ENCRYPTION_KEY` directly.
-- **Claude Code runs inside WSL.** Install Claude Code in your WSL terminal, not in Windows PowerShell. Your `~/.claude/` config lives in the WSL filesystem.
-- **Model cache path.** The ONNX embedding model downloads to `~/.cache/omega/models/` inside WSL (~90 MB). This is separate from any Windows-side cache.
-- **Multiple WSL distros.** Each distro has its own `~/.omega/` directory. If you switch distros, your memories don't carry over. Copy `~/.omega/omega.db` to transfer them.
+- **Use the Linux filesystem, not `/mnt/c/`.** OMEGA stores data in `~/.omega/` inside WSL. Keep your projects on the Linux side (`~/Projects/`) for best performance.
+- **Keyring may not work out of the box.** If you use `omega-memory[encrypt]`, install `keyrings.alt` for a file-based backend: `pip3 install keyrings.alt`.
+- **Claude Code runs inside WSL.** Install Claude Code in your WSL terminal, not in Windows PowerShell.
+- **Multiple WSL distros.** Each distro has its own `~/.omega/` directory. Copy `~/.omega/omega.db` to transfer memories.
+
+</details>
 
 <details>
-<summary><strong>Architecture & Advanced Details</strong></summary>
+<summary><strong>Architecture & Internals</strong></summary>
 
 ### Architecture
 
 ```
-               ┌─────────────────────┐
-               │    Claude Code       │
-               │  (or any MCP host)   │
-               └──────────┬──────────┘
-                          │ stdio/MCP
-               ┌──────────▼──────────┐
-               │   OMEGA MCP Server   │
-               │   12 memory tools    │
-               └──────────┬──────────┘
-                          │
-               ┌──────────▼──────────┐
-               │    omega.db (SQLite) │
-               │ memories | edges |   │
-               │     embeddings       │
-               └──────────────────────┘
+               +---------------------+
+               |    Claude Code       |
+               |  (or any MCP host)   |
+               +----------+----------+
+                          | stdio/MCP
+               +----------v----------+
+               |   OMEGA MCP Server   |
+               |   12 memory tools    |
+               +----------+----------+
+                          |
+               +----------v----------+
+               |    omega.db (SQLite) |
+               | memories | edges |   |
+               |     embeddings       |
+               +----------------------+
 ```
 
-Single database, modular handlers. Additional tools available via the plugin system.
-
 ### MCP Tools Reference
-
-12 core memory tools are available as an MCP server. Full tool reference at [omegamax.co/docs](https://omegamax.co/docs).
 
 | Tool | What it does |
 |------|-------------|
@@ -326,13 +293,11 @@ Single database, modular handlers. Additional tools available via the plugin sys
 | `omega_remind` | Set time-based reminders |
 | `omega_feedback` | Rate surfaced memories (helpful, unhelpful, outdated) |
 
-Additional utility tools for health checks, backup/restore, stats, editing, and deletion are also available. See [omegamax.co/docs](https://omegamax.co/docs) for the full reference.
-
 ### CLI
 
 | Command | Description |
 |---------|-------------|
-| `omega setup` | Create dirs, download model, register MCP, install hooks (`--hooks-only` to skip MCP) |
+| `omega setup` | Create dirs, download model, register MCP, install hooks |
 | `omega doctor` | Verify installation health |
 | `omega status` | Memory count, store size, model status |
 | `omega query <text>` | Search memories by semantic similarity |
@@ -349,7 +314,7 @@ Additional utility tools for health checks, backup/restore, stats, editing, and 
 
 ### Hooks
 
-All hooks dispatch via `fast_hook.py` → daemon UDS socket, with fail-open semantics.
+All hooks dispatch via `fast_hook.py` with fail-open semantics.
 
 | Hook | Handlers | Purpose |
 |------|----------|---------|
@@ -357,15 +322,6 @@ All hooks dispatch via `fast_hook.py` → daemon UDS socket, with fail-open sema
 | Stop | `session_stop` | Session summary |
 | UserPromptSubmit | `auto_capture` | Auto-capture lessons/decisions |
 | PostToolUse | `surface_memories` | Surface relevant memories during work |
-
-### Storage
-
-| Path | Purpose |
-|------|---------|
-| `~/.omega/omega.db` | SQLite database (memories, embeddings, edges) |
-| `~/.omega/profile.json` | User profile |
-| `~/.omega/hooks.log` | Hook error log |
-| `~/.cache/omega/models/bge-small-en-v1.5-onnx/` | ONNX embedding model |
 
 ### Search Pipeline
 
@@ -408,7 +364,7 @@ omega setup
 4. Install session hooks in `~/.claude/settings.json`
 5. Add a managed `<!-- OMEGA:BEGIN -->` block to `~/.claude/CLAUDE.md`
 
-All changes are idempotent — running `omega setup` again won't duplicate entries.
+All changes are idempotent.
 
 </details>
 
@@ -435,7 +391,7 @@ claude mcp add omega-memory -- python3 -m omega.server.mcp_server
 ```bash
 pip3 install -e ".[server,dev]"
 pytest tests/
-ruff check src/              # Lint
+ruff check src/
 ```
 
 ## Uninstall
@@ -448,10 +404,6 @@ pip3 uninstall omega-memory
 
 Manually remove OMEGA entries from `~/.claude/settings.json` and the `<!-- OMEGA:BEGIN -->` block from `~/.claude/CLAUDE.md`.
 
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=omega-memory/omega-memory&type=Date)](https://star-history.com/#omega-memory/omega-memory&Date)
-
 ## Contributing
 
 - [Contributing Guide](CONTRIBUTING.md)
@@ -461,4 +413,4 @@ Manually remove OMEGA entries from `~/.claude/settings.json` and the `<!-- OMEGA
 
 ## License
 
-Apache-2.0 — see [LICENSE](LICENSE) for details.
+Apache-2.0. See [LICENSE](LICENSE) for details.
