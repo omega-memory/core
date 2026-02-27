@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.omega-memory/omega-memory",
   "title": "Omega Memory",
-  "description": "Persistent memory for AI coding agents with semantic search, contradiction detection, intelligent forgetting, and cross-session learning. #1 on LongMemEval benchmark (95.4%).",
+  "description": "Persistent memory for AI coding agents. Semantic search, contradiction detection, memory decay.",
   "repository": {
     "url": "https://github.com/omega-memory/omega-memory",
     "source": "github"
