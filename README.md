@@ -8,6 +8,8 @@
 [![Tests](https://github.com/omega-memory/omega-memory/actions/workflows/test.yml/badge.svg)](https://github.com/omega-memory/omega-memory/actions/workflows/test.yml)
 [![#1 on LongMemEval](https://img.shields.io/badge/LongMemEval-95.4%25_%231_Overall-gold.svg)](https://omegamax.co/benchmarks)
 
+<!-- mcp-name: io.github.omega-memory/omega-memory -->
+
 ```bash
 pip3 install omega-memory[server]
 omega setup
@@ -15,7 +17,12 @@ omega setup
 
 Works with **Claude Code** | **Cursor** | **Windsurf** | **Zed** | any MCP client
 
-![OMEGA demo — without memory vs. with OMEGA](https://raw.githubusercontent.com/omega-memory/omega-memory/main/assets/demo.gif)
+<!-- TODO: demo GIF — record a ~30s terminal session showing:
+     1. "Remember we use early returns" in session A
+     2. Close session A, open session B
+     3. "What are my code style preferences?" → OMEGA recalls it
+     Place the GIF in assets/demo.gif and uncomment the line below. -->
+<!-- ![OMEGA demo — without memory vs. with OMEGA](https://raw.githubusercontent.com/omega-memory/omega-memory/main/assets/demo.gif) -->
 
 ---
 
@@ -157,6 +164,31 @@ Claude picks up exactly where you left off.
 
 Full comparison at [omegamax.co/compare](https://omegamax.co/compare).
 
+## Free vs Pro
+
+OMEGA follows an open-core model. The free Core tier is Apache-2.0 licensed and will never be relicensed.
+
+| Feature | Core (Free) | Pro ($19/mo) |
+|---------|:-----------:|:------------:|
+| **Memory tools** (store, query, search, lessons, profile) | 12 tools | 12 tools |
+| **Semantic search** (bge-small-en-v1.5 + sqlite-vec) | Yes | Yes |
+| **Auto-capture & surfacing** (hooks) | Yes | Yes |
+| **Checkpoint / resume** | Yes | Yes |
+| **Contradiction detection & dedup** | Yes | Yes |
+| **Graph relationships** (related, supersedes, contradicts) | Yes | Yes |
+| **Forgetting intelligence** (decay, conflict resolution) | Yes | Yes |
+| **Encryption at rest** (AES-256-GCM) | Yes | Yes |
+| **CLI** (query, store, status, timeline, doctor, etc.) | Yes | Yes |
+| **Multi-agent coordination** (file claims, branch guards, task queues, messaging) | -- | 37 tools |
+| **Multi-LLM routing** (intent classification, provider switching) | -- | 10 tools |
+| **Entity management** (corporate registry, relationship graphs) | -- | 8 tools |
+| **Secure encrypted profiles** (AES-256, category-scoped) | -- | 3 tools |
+| **Cloud sync** (Supabase) | -- | Yes |
+| **Priority support** | -- | Yes |
+| **License** | Apache-2.0 | Commercial |
+
+> **Core is complete.** Most individual developers will never need Pro. Pro unlocks multi-agent coordination and enterprise capabilities for teams running multiple concurrent agents.
+
 ## Benchmark
 
 **#1 on [LongMemEval](https://github.com/xiaowu0162/LongMemEval)** (ICLR 2025) -- the academic benchmark for long-term memory systems. 500 questions testing extraction, reasoning, temporal understanding, and preference tracking.
@@ -182,15 +214,34 @@ Details and methodology at [omegamax.co/benchmarks](https://omegamax.co/benchmar
 
 ## Compatibility
 
+### Supported Editors
+
 | Client | 12 MCP Tools | Auto-Capture Hooks | Setup Command |
 |--------|:------------:|:------------------:|---------------|
 | Claude Code | Yes | Yes | `omega setup` |
 | Cursor | Yes | No | `omega setup --client cursor` |
 | Windsurf | Yes | No | `omega setup --client windsurf` |
 | Zed | Yes | No | `omega setup --client zed` |
-| Any MCP Client | Yes | No | Manual config (see docs) |
+| Any MCP Client | Yes | No | Manual config ([docs](https://omegamax.co/docs)) |
 
-Requires Python 3.11+. macOS and Linux supported. Windows via WSL.
+Auto-capture hooks are currently only supported by Claude Code's hook system. All MCP-compatible clients get the full 12-tool memory API.
+
+### Python & OS
+
+| Python | Status | | OS | Status |
+|--------|--------|-|-------------|--------|
+| 3.11 | Supported | | macOS (Apple Silicon + Intel) | Fully supported |
+| 3.12 | Supported | | Linux (x86_64, aarch64) | Fully supported |
+| 3.13 | Supported | | Windows (WSL 2) | Supported |
+
+### System Requirements
+
+| Resource | Requirement |
+|----------|-------------|
+| **Disk** | ~90 MB for the ONNX embedding model |
+| **RAM** | ~31 MB at startup, ~337 MB after first query (ONNX CPU inference) |
+| **GPU** | Not required (CPU-only inference) |
+| **Network** | Required once for setup (model download), then fully offline |
 
 ## Remote / SSH Setup
 
@@ -282,16 +333,14 @@ omega doctor
 | `omega_query` | Semantic or phrase search with tag filters and contextual re-ranking |
 | `omega_lessons` | Cross-session lessons ranked by access count |
 | `omega_welcome` | Session briefing with recent memories and profile |
+| `omega_protocol` | Retrieve operating rules and behavioral guidelines |
 | `omega_profile` | Read or update the user profile |
 | `omega_checkpoint` | Save task state for cross-session continuity |
 | `omega_resume_task` | Resume a previously checkpointed task |
-| `omega_similar` | Find memories similar to a given one |
-| `omega_traverse` | Walk the relationship graph |
-| `omega_compact` | Cluster and summarize related memories |
-| `omega_consolidate` | Prune stale memories, cap summaries, clean edges |
-| `omega_timeline` | Memories grouped by day |
-| `omega_remind` | Set time-based reminders |
-| `omega_feedback` | Rate surfaced memories (helpful, unhelpful, outdated) |
+| `omega_memory` | Manage a specific memory (edit, delete, feedback, similar, traverse) |
+| `omega_remind` | Set, list, or dismiss time-based reminders |
+| `omega_maintain` | System housekeeping (health, consolidate, compact, backup, restore) |
+| `omega_stats` | Analytics: type breakdown, session stats, weekly digest, access rates |
 
 ### CLI
 
@@ -413,4 +462,4 @@ Manually remove OMEGA entries from `~/.claude/settings.json` and the `<!-- OMEGA
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE) for details.
+Apache-2.0. See [LICENSE](LICENSE) for details. The free Core tier is Apache-2.0 licensed and will never be relicensed.

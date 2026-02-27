@@ -105,13 +105,15 @@ We follow conventional commits:
 - `docs:` — documentation only
 - `chore:` — maintenance (version bumps, CI, etc.)
 - `refactor:` — code change that neither fixes a bug nor adds a feature
+- `test:` — adding or updating tests
+- `perf:` — performance improvement
 
 ## What to Contribute
 
-- Bug fixes (check [open issues](https://github.com/omega-memory/omega-memory/issues))
+- Bug fixes (check [open issues](https://github.com/omega-memory/omega-memory/issues), especially [`good first issue`](https://github.com/omega-memory/omega-memory/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22))
 - Documentation improvements
 - Test coverage for uncovered code paths
-- Performance optimizations
+- Performance optimizations (SQLite query optimization, embedding speedups)
 - New memory tool ideas (open an issue first to discuss)
 
 ## Developer Certificate of Origin
@@ -119,6 +121,12 @@ We follow conventional commits:
 By contributing, you certify that your contribution is your own work and you have the right to submit it under the Apache-2.0 license. We use the [Developer Certificate of Origin](https://developercertificate.org/) (DCO).
 
 Sign your commits with `git commit -s` to add the DCO sign-off.
+
+## Architecture Notes
+
+OMEGA's core is a SQLite database with three main tables: `memories` (content + metadata), `edges` (typed relationships between memories), and `embeddings` (384-dim bge-small-en-v1.5 vectors via sqlite-vec). The search pipeline combines vector similarity and FTS5 full-text search with type-weighted scoring and contextual re-ranking.
+
+The MCP server runs as a subprocess spawned by your editor. It communicates over stdio using JSON-RPC per the [Model Context Protocol](https://modelcontextprotocol.io/) specification.
 
 ## Questions?
 
